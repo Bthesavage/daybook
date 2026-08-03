@@ -1,0 +1,4109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daybook — Income Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#16a34a;
+    --green-dark:#0f7a37;
+    --green-light:#e7f7ec;
+    --teal:#0ea5a4;
+    --amber:#d97706;
+    --amber-light:#fef3e2;
+    --bg:#f6f7f9;
+    --card:#ffffff;
+    --border:#e6e8ec;
+    --text:#1f2430;
+    --text-soft:#6b7280;
+    --radius:16px;
+    --shadow:0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06);
+    --font-body:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-money:'Space Grotesk','Inter',-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{overflow-x:hidden;}
+  body{
+    margin:0;
+    overflow-x:hidden;
+    font-family:var(--font-body);
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* Full-color emoji, no filters */
+  .emoji-white{display:inline-block;}
+  .emoji-mono{display:inline-block;}
+  .icon-chip{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;vertical-align:-3px;}
+
+  /* Money gets its own bold display font wherever it appears */
+  .money, .value, .amt, .e-amt, .r-amt, .c-value{
+    font-family:var(--font-money);
+    font-weight:700;
+    letter-spacing:-0.01em;
+    font-variant-numeric:tabular-nums;
+  }
+  /* Shell: fixed left sidebar + scrolling main content */
+  .shell{display:flex;align-items:stretch;min-height:100vh;}
+  .sidebar{
+    width:250px;flex-shrink:0;background:#111827;color:#e2e8f0;
+    display:flex;flex-direction:column;gap:16px;padding:20px 16px;
+    position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto;
+  }
+  .main{flex:1;min-width:0;}
+  .main-inner{max-width:1040px;margin:0 auto;padding:20px 20px 60px;}
+
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand .logo{
+    width:36px;height:36px;border-radius:10px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--green),var(--teal));
+    display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;
+  }
+  .brand h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-0.01em;color:#fff;}
+  .brand span{font-size:11px;color:#8a94a6;}
+
+  nav.tabs{display:flex;flex-direction:column;gap:3px;}
+  nav.tabs button{
+    display:flex;align-items:center;gap:10px;
+    border:none;background:transparent;padding:10px 12px;border-radius:10px;text-align:left;width:100%;
+    font-size:14px;font-weight:600;color:#aab2c0;cursor:pointer;
+    transition:all .15s ease;
+  }
+  nav.tabs button .nav-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0;opacity:.85;}
+  nav.tabs button.active .nav-icon{opacity:1;}
+  nav.tabs button.active{background:var(--green);color:#fff;}
+  nav.tabs button:not(.active):hover{background:#1e293b;color:#fff;}
+  .tab-badge{
+    display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;
+    padding:0 4px;border-radius:8px;background:var(--amber);color:#fff;font-size:10px;font-weight:800;
+    margin-left:auto;
+  }
+  nav.tabs button.active .tab-badge{background:rgba(255,255,255,0.35);}
+
+  .sb-card{background:#1a2332;border:1px solid #262f42;border-radius:14px;padding:14px;}
+  .sb-level-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .sb-level-head .sb-level-title{font-size:14px;font-weight:800;color:#fff;}
+  .sb-close{background:none;border:none;color:#5b6576;cursor:pointer;font-size:13px;padding:0;}
+  .sb-close:hover{color:#aab2c0;}
+  .sb-xp{font-size:11px;color:#8a94a6;margin-bottom:8px;}
+  .progress-track.dark{background:#0b1220;}
+  .sb-level-sub{font-size:11px;color:#8a94a6;margin-top:6px;}
+
+  .sb-quote-card{background:linear-gradient(160deg,#1a2332,#111827);border:1px solid #262f42;}
+  .sb-quote-mark{font-size:26px;line-height:1;color:var(--green);font-weight:800;font-family:Georgia,serif;}
+  .sb-quote-text{font-size:12.5px;font-style:italic;color:#dce2ea;line-height:1.55;margin:4px 0 10px;}
+  .sb-quote-attr{font-size:11px;color:#5b6576;font-weight:700;}
+
+  .sb-profile{
+    margin-top:auto;padding-top:14px;border-top:1px solid #1e293b;
+    display:flex;align-items:center;gap:10px;
+  }
+  .sb-avatar{
+    width:36px;height:36px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg,var(--green),var(--teal));color:#fff;font-weight:800;font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .sb-name{font-size:13px;font-weight:700;color:#fff;}
+  .sb-sub-small{font-size:11px;color:#5b6576;}
+
+  @media (max-width:860px){
+    .shell{flex-direction:column;}
+    .sidebar{
+      width:100%;height:auto;position:relative;top:auto;
+      flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px;
+    }
+    .sidebar .brand{margin-right:auto;}
+    nav.tabs{flex-direction:row;flex-wrap:wrap;flex:1 1 100%;}
+    nav.tabs button{width:auto;}
+    .sb-level-card, .sb-quote-card{flex:1 1 220px;}
+    .sb-profile{margin-top:0;border-top:none;padding-top:0;margin-left:auto;}
+  }
+  /* Phones: abandon the tablet chip-bar layout and go back to a clean
+     full-width vertical stack so nothing shares a cramped row. */
+  @media (max-width:560px){
+    .sidebar{flex-direction:column;align-items:stretch;padding:14px 14px;gap:10px;}
+    .sidebar .brand{margin-right:0;}
+    nav.tabs{flex-direction:column;flex-wrap:nowrap;flex:none;gap:2px;}
+    nav.tabs button{width:100%;}
+    .sb-level-card, .sb-quote-card{flex:none;width:100%;}
+    .sb-profile{margin-left:0;margin-top:2px;padding-top:12px;border-top:1px solid #1e293b;}
+    .main-inner{padding:14px 14px 48px;}
+    .card{padding:14px;}
+    .cal-grid{gap:4px;}
+    .day-cell{aspect-ratio:1/1;min-height:0;padding:4px 3px;border-radius:9px;}
+    .day-cell .num{font-size:10px;}
+    .day-cell .amt{font-size:10px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .cal-grid-large .day-cell{min-height:52px;aspect-ratio:auto;}
+    .cal-grid-large .num{font-size:11px;}
+    .cal-grid-large .amt{font-size:11px;}
+    .row-2{grid-template-columns:1fr;gap:8px;}
+    .stat-card .value{font-size:24px;}
+    .ring-wrap, .ring{width:104px;height:104px;}
+    .modal{padding:16px;}
+    #modal-date{font-size:17px;}
+    th, td{padding:8px 6px;font-size:12px;}
+    .dash-greeting h2{font-size:18px;}
+  }
+
+  /* ---------- MOBILE NAV: bottom bar + FAB replaces the sidebar ---------- */
+  .bottom-nav, .bn-fab, .bn-more-popover{display:none;}
+  @media (max-width:768px){
+    .sidebar{display:none;}
+    .shell{flex-direction:column;}
+    .main-inner{padding-bottom:88px;}
+    .dash-add-desktop{display:none;}
+    .bottom-nav{
+      display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;
+      background:#fff;border-top:1px solid var(--border);padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+      box-shadow:0 -2px 10px rgba(16,24,40,0.06);
+    }
+    .bn-item{
+      flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;
+      color:var(--text-soft);font-size:10px;padding:4px 0;cursor:pointer;position:relative;
+    }
+    .bn-item .bn-icon{font-size:19px;}
+    .bn-item.active{color:var(--green);font-weight:700;}
+    .bn-fab-slot{flex:1;}
+    .bn-fab{
+      display:flex;align-items:center;justify-content:center;position:fixed;left:50%;bottom:30px;
+      transform:translateX(-50%);width:50px;height:50px;border-radius:50%;z-index:41;
+      background:linear-gradient(135deg,var(--green),var(--teal));color:#fff;border:4px solid var(--bg);
+      font-size:22px;cursor:pointer;box-shadow:0 8px 18px -6px rgba(22,163,74,.55);
+    }
+    .bn-more-popover{
+      position:fixed;left:16px;right:16px;bottom:78px;z-index:42;background:#fff;border-radius:14px;
+      border:1px solid var(--border);box-shadow:0 10px 30px rgba(16,24,40,0.15);padding:6px;
+      flex-direction:column;gap:2px;
+    }
+    .bn-more-popover.open{display:flex;}
+    .bn-more-popover button{
+      display:flex;align-items:center;gap:10px;text-align:left;border:none;background:none;padding:11px 12px;
+      border-radius:10px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;width:100%;
+    }
+    .bn-more-popover button:hover{background:var(--bg);}
+    .bn-more-popover .tab-badge{margin-left:auto;background:var(--amber);color:#fff;}
+  }
+  .bn-more-popover{display:none;}
+
+  /* ---------- Date line above the greeting ---------- */
+  .dash-date{margin:0 0 2px;font-size:12px;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.04em;}
+
+  /* ---------- Achievement unlock celebration (confetti + modal) ---------- */
+  #confetti-canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:71;}
+  .achv-celebrate-modal{max-width:380px;text-align:center;}
+  .achv-celebrate-icon{font-size:46px;line-height:1;margin:6px 0 8px;}
+  .achv-celebrate-title{
+    margin:0 0 4px;font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--green),var(--teal));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .achv-celebrate-label{font-size:15px;font-weight:700;color:var(--text);margin:2px 0 14px;}
+  .achv-celebrate-quote{font-size:13px;font-style:italic;color:var(--text-soft);line-height:1.55;margin:0 0 20px;padding:0 4px;}
+
+  /* ---------- Merged "today" hero card ---------- */
+  .hero-card{
+    background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:18px;padding:22px 20px;
+    margin-bottom:16px;box-shadow:0 12px 24px -12px rgba(29,78,216,.55);text-align:center;
+  }
+  .hero-card .ring-wrap, .hero-card .ring{width:88px;height:88px;margin:0 auto 12px;}
+  .hero-card .ring{background:rgba(255,255,255,.25);}
+  .hero-card .ring-hole{background:#2563eb;inset:10px;}
+  .hero-card .ring-pct{color:#fff;font-size:18px;}
+  .hero-card .ring-caption{color:rgba(255,255,255,.75);}
+  .hero-card .hero-label{margin:0;font-size:11px;color:rgba(255,255,255,.8);font-weight:700;letter-spacing:.04em;}
+  .hero-card .hero-value{margin:4px 0 0;font-size:30px;font-weight:800;color:#fff;font-family:var(--font-money);}
+  .hero-card .hero-sub{margin:2px 0 0;font-size:12px;color:rgba(255,255,255,.85);}
+  .hero-card .hero-detail-rows{display:none;}
+  .hero-chip-row{display:flex;gap:8px;margin-top:14px;}
+  .hero-chip{flex:1;background:rgba(255,255,255,.16);border-radius:11px;padding:9px 6px;text-align:center;min-width:0;}
+  .hero-chip .hero-chip-label{margin:0;font-size:10px;color:rgba(255,255,255,.8);font-weight:700;letter-spacing:.03em;}
+  .hero-chip .hero-chip-value{margin:3px 0 0;font-size:15px;font-weight:800;color:#fff;font-family:var(--font-money);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hero-chip .hero-chip-sub{display:none;}
+  .hero-view-btn{
+    display:block;width:100%;margin-top:14px;padding:10px;border-radius:10px;border:none;
+    background:rgba(255,255,255,.18);color:#fff;font-size:13px;font-weight:700;cursor:pointer;
+  }
+  .hero-view-btn:hover{background:rgba(255,255,255,.28);}
+
+  /* ---------- Empty state hero ---------- */
+  .empty-hero{
+    background:linear-gradient(135deg,var(--green),var(--teal));border-radius:20px;padding:32px 24px;
+    text-align:center;margin-bottom:16px;box-shadow:0 12px 24px -12px rgba(15,122,55,.5);
+  }
+  .empty-hero .empty-hero-icon{
+    width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);margin:0 auto 14px;
+    display:flex;align-items:center;justify-content:center;font-size:26px;
+  }
+  .empty-hero h3{margin:0;font-size:18px;font-weight:800;color:#fff;}
+  .empty-hero p{margin:8px 0 18px;font-size:13px;color:rgba(255,255,255,.9);line-height:1.5;}
+  .empty-hero .btn{width:100%;background:#fff;color:var(--green-dark);}
+  .empty-hero .btn:hover{background:#f1f2f5;}
+
+  /* ---------- Payment status: gradient, centered ---------- */
+  .pay-stat-grid .stat-card{text-align:center;border:none;min-width:0;padding:16px 10px;}
+  .pay-stat-grid .stat-card .label{
+    color:rgba(255,255,255,.92);font-size:11px;line-height:1.3;letter-spacing:.03em;
+    word-break:normal;overflow-wrap:break-word;
+  }
+  .pay-stat-grid .stat-card .value{
+    color:#fff;font-size:24px;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;
+  }
+  .pay-stat-grid .stat-card .sub{color:rgba(255,255,255,.92);word-break:normal;overflow-wrap:break-word;}
+  .pay-stat-grid .pay-stat-earned{background:linear-gradient(135deg,#4ade80,#16a34a);box-shadow:0 8px 16px -9px rgba(22,163,74,.55);}
+  .pay-stat-grid .pay-stat-paid{background:linear-gradient(135deg,#60a5fa,#2563eb);box-shadow:0 8px 16px -9px rgba(37,99,235,.55);}
+  .pay-stat-grid .pay-stat-outstanding{background:linear-gradient(135deg,#fbbf24,#d97706);box-shadow:0 8px 16px -9px rgba(217,119,6,.55);}
+  .pay-stat-grid .pay-stat-overdue{background:linear-gradient(135deg,#f87171,#dc2626);box-shadow:0 8px 16px -9px rgba(220,38,38,.55);}
+
+  /* ---------- Achievements: gradient chip when unlocked ---------- */
+  .achv-badge.unlocked{background:linear-gradient(135deg,#4ade80,#16a34a);border-color:transparent;box-shadow:0 6px 14px -8px rgba(22,163,74,.5);}
+  .achv-badge.unlocked .achv-label{color:#fff;}
+
+  /* ---------- Show more toggle ---------- */
+  .showmore-btn{
+    display:block;width:100%;padding:11px;font-size:13px;font-weight:700;color:var(--text);
+    background:#fff;border:1px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:16px;
+  }
+  .showmore-btn:hover{background:#f6f7f9;}
+  .showmore-content{display:none;}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 20px;margin-bottom:16px;
+  }
+
+  /* Summary cards */
+  .summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;}
+  @media (max-width:640px){.summary-grid{grid-template-columns:1fr;}}
+  .stat-card .label{font-size:12px;color:var(--text-soft);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+  .stat-card .value{font-size:32px;font-weight:800;letter-spacing:-0.02em;line-height:1.1;}
+  .stat-card .sub{font-size:12px;color:var(--text-soft);margin-top:4px;font-family:var(--font-body);font-weight:500;}
+
+  .progress-wrap{margin-top:10px;}
+  .progress-track{height:10px;border-radius:6px;background:#eef0f3;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--teal));border-radius:6px;transition:width .3s ease;}
+  .progress-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--text-soft);margin-top:6px;}
+
+  /* Calendar */
+  .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .cal-header .month-label{font-size:18px;font-weight:700;}
+  .cal-nav{display:flex;gap:6px;align-items:center;}
+  .icon-btn{
+    width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:#fff;
+    cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text);
+  }
+  .icon-btn:hover{background:#f1f2f5;}
+  .today-btn{
+    border:1px solid var(--border);background:#fff;border-radius:9px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text);
+  }
+  .today-btn:hover{background:#f1f2f5;}
+
+  .weekday-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px;}
+  .weekday-row div{text-align:center;font-size:11px;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.03em;}
+
+  .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;}
+  .day-cell{
+    aspect-ratio:1/0.85;min-height:64px;border-radius:12px;border:1px solid var(--border);
+    background:#fff;padding:6px 6px;cursor:pointer;position:relative;display:flex;flex-direction:column;
+    transition:transform .1s ease, box-shadow .1s ease;
+  }
+  .day-cell:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
+  .day-cell.empty{background:transparent;border:none;cursor:default;}
+  .day-cell.empty:hover{transform:none;box-shadow:none;}
+  .day-cell .num{font-size:12px;font-weight:700;color:var(--text-soft);}
+  .day-cell.is-today .num{color:var(--teal);}
+  .day-cell.is-today{border-color:var(--teal);}
+  .day-cell .amt{margin-top:auto;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
+  .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;}
+
+  /* Day tiers: gray = nothing, blue = pending only, red = below goal, green = goal hit, gold = doubled, purple = all-time best */
+  .day-cell.tier-gray{background:#fff;}
+  .day-cell.tier-blue{background:#eaf2fe;}
+  .day-cell.tier-blue .amt{color:#2563eb;}
+  .day-cell.tier-red{background:#fdeceb;}
+  .day-cell.tier-red .amt{color:#dc2626;}
+  .day-cell.tier-green{background:var(--green-light);}
+  .day-cell.tier-green .amt{color:var(--green-dark);}
+  .day-cell.tier-gold{background:#fef6da;}
+  .day-cell.tier-gold .amt{color:#b45309;}
+  .day-cell.tier-purple{background:#f6ecfe;border-color:#dcb8f7;}
+  .day-cell.tier-purple .amt{color:#7e22ce;}
+  .dot.tier-blue{background:#2563eb;}
+  .dot.tier-red{background:#dc2626;}
+  .dot.tier-green{background:var(--green);}
+  .dot.tier-gold{background:#eab308;}
+  .dot.tier-purple{background:#a855f7;}
+
+  .legend{display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--text-soft);flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend i{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+  /* Banner */
+  .banner{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    background:var(--amber-light);border:1px solid #f2dcb3;border-radius:14px;padding:12px 16px;margin-bottom:16px;font-size:13px;
+  }
+  .banner strong{color:#8a5a06;}
+  .banner .btn{padding:7px 14px;font-size:13px;}
+  .banner .dismiss{background:none;border:none;color:var(--text-soft);cursor:pointer;font-size:16px;padding:0 4px;}
+
+  /* Modal */
+  .overlay{
+    display:none;position:fixed;inset:0;background:rgba(15,20,30,0.45);
+    align-items:center;justify-content:center;z-index:50;padding:16px;
+  }
+  .overlay.active{display:flex;}
+  .modal{
+    background:#fff;border-radius:18px;max-width:440px;width:100%;max-height:88vh;overflow-y:auto;
+    padding:22px;box-shadow:0 20px 50px rgba(0,0,0,0.25);
+  }
+  .modal h2{margin:0 0 2px;font-size:18px;}
+  .modal .modal-sub{font-size:13px;color:var(--text-soft);margin-bottom:16px;}
+  .close-x{position:sticky;top:0;float:right;border:none;background:none;font-size:20px;cursor:pointer;color:var(--text-soft);margin-top:-6px;}
+
+  .entry-list{margin-bottom:14px;display:flex;flex-direction:column;gap:8px;}
+  .entry-item{
+    border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+  }
+  .entry-item.editing{border-color:var(--teal);background:#eef9fa;}
+  .entry-item .e-amt{font-weight:700;color:var(--green-dark);font-size:15px;}
+  .entry-item .e-client{font-size:13px;font-weight:600;margin-top:2px;}
+  .entry-item .e-note{font-size:12px;color:var(--text-soft);margin-top:2px;}
+  .entry-item .del{border:none;background:none;color:#c33;cursor:pointer;font-size:13px;font-weight:600;}
+  .entry-item .edit{border:none;background:none;color:var(--teal);cursor:pointer;font-size:13px;font-weight:600;}
+  .entry-item .e-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+  .day-total{font-size:13px;color:var(--text-soft);margin-bottom:10px;}
+
+  .status-pill{
+    display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;
+    padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em;
+  }
+  .status-pill.paid{background:var(--green-light);color:var(--green-dark);}
+  .status-pill.pending{background:var(--amber-light);color:var(--amber);}
+  .status-pill.invoiced{background:#eaf2fe;color:#2563eb;}
+  .status-pill.partial{background:#f0e9ff;color:#7c3aed;}
+  .status-pill.overdue{background:#fdeceb;color:#dc2626;}
+  .status-pill.cancelled{background:#eef0f3;color:#6b7280;text-decoration:line-through;}
+  .status-toggle{border:1px solid var(--border);background:#fff;border-radius:8px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text);}
+  .status-toggle:hover{background:#f1f2f5;}
+  select.status-select{
+    border:1px solid var(--border);background:#fff;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;
+    cursor:pointer;color:var(--text);width:auto;
+  }
+
+  form.entry-form{display:flex;flex-direction:column;gap:10px;border-top:1px dashed var(--border);padding-top:14px;}
+  label{font-size:12px;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.03em;}
+  input,textarea,select{
+    width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);font-size:14px;
+    font-family:inherit;background:#fbfbfc;
+  }
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--teal);background:#fff;}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field-hint{font-size:11px;color:var(--text-soft);}
+  .btn{
+    border:none;border-radius:10px;padding:11px 16px;font-size:14px;font-weight:700;cursor:pointer;
+  }
+  .btn-primary{background:var(--green);color:#fff;}
+  .btn-primary:hover{background:var(--green-dark);}
+  .btn-secondary{background:#f1f2f5;color:var(--text);}
+  .btn-secondary:hover{background:#e7e9ed;}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  @media (max-width:480px){.row-3{grid-template-columns:1fr;}}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  .checkbox-row{display:flex;align-items:center;gap:8px;}
+  .checkbox-row input[type=checkbox]{width:auto;accent-color:var(--green);}
+  .checkbox-row label{font-size:13px;font-weight:600;color:var(--text);text-transform:none;letter-spacing:0;}
+  .conditional-field{display:none;}
+  .conditional-field.show{display:flex;}
+
+  /* Calendar Earned/Paid/Both filter */
+  .cal-filter{display:inline-flex;border:1px solid var(--border);border-radius:10px;padding:2px;background:#fff;gap:2px;}
+  .cal-filter button{
+    border:none;background:transparent;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;
+    cursor:pointer;color:var(--text-soft);
+  }
+  .cal-filter button.active{background:var(--green);color:#fff;}
+  .cal-filter-row{display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px;gap:8px;flex-wrap:wrap;}
+  .cal-mode-toggle{display:inline-flex;border:1px solid var(--border);border-radius:10px;padding:2px;background:#fff;gap:2px;}
+  .cal-mode-toggle button{
+    border:none;background:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;
+    color:var(--text-soft);cursor:pointer;
+  }
+  .cal-mode-toggle button.active{background:var(--teal);color:#fff;}
+
+  .deal-list{display:flex;flex-direction:column;gap:8px;}
+  .deal-row{
+    display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);
+    border-radius:12px;padding:10px 12px;
+  }
+  .deal-row .deal-bar{width:5px;height:32px;border-radius:3px;flex-shrink:0;}
+  .deal-row .deal-bar.tier-blue{background:#2563eb;}
+  .deal-row .deal-bar.tier-red{background:#dc2626;}
+  .deal-row .deal-bar.tier-green{background:var(--green);}
+  .deal-row .deal-bar.tier-gray{background:var(--border);}
+  .deal-row .deal-main{flex:1;min-width:0;}
+  .deal-row .deal-client{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .deal-row .deal-date{font-size:11px;color:var(--text-soft);margin-top:1px;}
+  .deal-row .deal-amt{font-size:14px;font-weight:800;font-family:var(--font-money);flex-shrink:0;}
+  .deal-list-group-label{font-size:11px;font-weight:800;color:var(--text-soft);text-transform:uppercase;letter-spacing:.04em;margin:4px 0 2px;}
+  .deal-list-empty{font-size:13px;color:var(--text-soft);padding:8px 2px;}
+  .day-cell .amt-both{margin-top:auto;display:flex;flex-direction:column;gap:0;}
+  .day-cell .amt-both .amt-earned{font-size:11px;font-weight:700;color:var(--green-dark);}
+  .day-cell .amt-both .amt-paid{font-size:11px;font-weight:700;color:#2563eb;}
+
+  /* Analytics tab */
+  .analytics-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;}
+  @media (max-width:860px){.analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media (max-width:480px){.analytics-grid{grid-template-columns:1fr;}}
+  .bar-chart{display:flex;align-items:flex-end;gap:14px;height:180px;padding-top:10px;overflow-x:auto;}
+  .bar-chart-month{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:52px;flex-shrink:0;}
+  .bar-chart-bars{display:flex;align-items:flex-end;gap:4px;height:140px;}
+  .bar-chart-bar{width:16px;border-radius:4px 4px 0 0;min-height:2px;}
+  .bar-chart-bar.earned{background:var(--green);}
+  .bar-chart-bar.paid{background:#2563eb;}
+  .bar-chart-label{font-size:10px;color:var(--text-soft);font-weight:700;white-space:nowrap;}
+  .bar-chart-legend{display:flex;gap:16px;font-size:12px;color:var(--text-soft);margin-top:10px;}
+  .bar-chart-legend span{display:inline-flex;align-items:center;gap:6px;}
+  .bar-chart-legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+
+  /* Clients */
+  #pending-table-wrap, #clients-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px;}
+  table{width:100%;border-collapse:collapse;min-width:560px;}
+  th{
+    text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--text-soft);
+    padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;
+  }
+  td{padding:10px;border-bottom:1px solid var(--border);font-size:14px;white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  .client-name{font-weight:700;}
+  .rank{
+    display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--green-light);color:var(--green-dark);
+    font-size:11px;font-weight:800;align-items:center;justify-content:center;margin-right:8px;
+  }
+  .empty-state{text-align:center;padding:40px 20px;color:var(--text-soft);}
+  .empty-state .big{font-size:32px;margin-bottom:8px;}
+  .search-box{margin-bottom:14px;}
+  .invoice-filters{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:stretch;}
+  .invoice-filters input[type="text"]{flex:1 1 220px;margin-bottom:0;}
+  .invoice-filters select{flex:0 1 190px;margin-bottom:0;}
+  .invoice-filters #inv-export-btn{white-space:nowrap;}
+  @media (max-width:560px){
+    .invoice-filters{flex-direction:column;}
+    .invoice-filters input[type="text"], .invoice-filters select, .invoice-filters #inv-export-btn{flex:none;width:100%;}
+  }
+
+  /* Vision Board */
+  .vision-intro{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+  .vision-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:14px;}
+  .vision-card{
+    position:relative;border-radius:16px;overflow:hidden;background:var(--card);cursor:pointer;
+    box-shadow:var(--shadow);display:flex;flex-direction:column;border:1px solid var(--border);
+  }
+  .vision-card-media{
+    height:150px;background-size:cover;background-position:center;background-color:#dfe3ea;
+    display:flex;align-items:flex-start;justify-content:flex-end;
+  }
+  .vision-card-media.no-image{background:linear-gradient(135deg,var(--green),var(--teal));align-items:center;justify-content:center;}
+  .vision-card-media.no-image .vc-placeholder-icon{font-size:36px;opacity:.85;}
+  .vision-card-actions{display:flex;gap:4px;padding:8px;}
+  .vision-card-actions button{
+    width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,0.45);color:#fff;
+    cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .vision-card-actions button:hover{background:rgba(0,0,0,0.65);}
+  .vision-card-body{padding:12px 14px 14px;}
+  .vision-card-title{font-weight:700;font-size:14.5px;margin-bottom:6px;line-height:1.25;}
+  .vision-card-note{font-size:12px;color:var(--text-soft);}
+  .vision-progress-track{height:7px;border-radius:5px;background:var(--bg);border:1px solid var(--border);overflow:hidden;margin-top:2px;}
+  .vision-progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--teal));border-radius:5px;}
+  .vision-progress-label{font-size:11px;color:var(--text-soft);margin-top:5px;font-weight:700;}
+  .vision-add-card{
+    border:2px dashed var(--border);border-radius:16px;display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:6px;color:var(--text-soft);font-weight:700;font-size:13px;cursor:pointer;min-height:150px;
+    background:#fbfbfc;
+  }
+  .vision-add-card:hover{border-color:var(--green);color:var(--green-dark);}
+  .vision-add-card .plus{font-size:26px;line-height:1;}
+  #vf-image-preview{margin-top:8px;}
+  #vf-image-preview img{width:100%;max-height:160px;object-fit:cover;border-radius:10px;display:block;}
+
+  /* Vision focus mode */
+  .vision-focus-overlay{background:rgba(10,12,18,0.94);flex-direction:column;}
+  .vf-close{position:fixed;top:16px;right:16px;color:#fff;font-size:24px;z-index:52;}
+  .vf-stage{max-width:640px;width:100%;text-align:center;}
+  .vf-image{width:100%;max-height:56vh;object-fit:cover;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+  .vf-image-placeholder{
+    width:100%;height:280px;border-radius:18px;background:linear-gradient(135deg,var(--green),var(--teal));
+    display:flex;align-items:center;justify-content:center;font-size:52px;
+  }
+  .vf-title{color:#fff;font-size:24px;font-weight:800;margin-top:18px;}
+  .vf-note{color:#c7ced9;font-size:13px;margin-top:6px;}
+  .vf-progress-wrap{max-width:360px;margin:16px auto 0;}
+  .vf-progress-track{height:10px;border-radius:6px;background:rgba(255,255,255,0.15);overflow:hidden;}
+  .vf-progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--teal));}
+  .vf-progress-label{color:#dce2ea;font-size:12.5px;margin-top:8px;font-weight:700;}
+  .vf-nav{
+    background:rgba(255,255,255,0.08);border:none;color:#fff;font-size:28px;width:46px;height:46px;border-radius:50%;
+    cursor:pointer;position:fixed;top:50%;transform:translateY(-50%);z-index:51;
+  }
+  .vf-nav:hover{background:rgba(255,255,255,0.18);}
+  .vf-prev{left:16px;}
+  .vf-next{right:16px;}
+  .vf-dots{display:flex;gap:6px;margin-top:22px;flex-wrap:wrap;justify-content:center;max-width:70vw;}
+  .vf-dots button{width:8px;height:8px;border-radius:50%;border:none;background:rgba(255,255,255,0.3);cursor:pointer;padding:0;}
+  .vf-dots button.active{background:#fff;}
+  @media (max-width:560px){
+    .vf-nav{width:38px;height:38px;font-size:22px;}
+    .vf-prev{left:6px;} .vf-next{right:6px;}
+    .vf-title{font-size:19px;}
+  }
+
+  /* Settings */
+  .settings-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;}
+  @media (max-width:560px){.settings-grid{grid-template-columns:1fr;}}
+  .computed{
+    background:var(--green-light);border-radius:12px;padding:14px 16px;margin-top:14px;
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;
+  }
+  @media (max-width:700px){.computed{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media (max-width:360px){.computed{grid-template-columns:1fr;}}
+  .computed .c-label{font-size:11px;color:var(--green-dark);font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+  .computed .c-value{font-size:19px;font-weight:800;color:var(--green-dark);margin-top:2px;}
+
+  /* Dashboard style picker */
+  .dash-style-options{display:flex;flex-direction:column;gap:10px;}
+  .dash-style-option{
+    display:flex;align-items:center;gap:12px;border:1.5px solid var(--border);border-radius:12px;
+    padding:12px 14px;cursor:pointer;transition:border-color .1s ease,background .1s ease;
+  }
+  .dash-style-option:hover{border-color:var(--border-strong,#d0d0ca);}
+  .dash-style-option.active{border-color:var(--green);background:var(--green-light);}
+  .dash-style-option input[type="radio"]{width:18px;height:18px;flex-shrink:0;accent-color:var(--green);margin:0;}
+  .dso-icon{
+    width:36px;height:36px;border-radius:9px;background:#eef0f3;display:flex;align-items:center;
+    justify-content:center;font-size:16px;flex-shrink:0;color:var(--text-soft);
+  }
+  .dash-style-option.active .dso-icon{background:linear-gradient(135deg,var(--green),var(--teal));color:#fff;}
+  .dso-text{flex:1;min-width:0;}
+  .dso-title{font-size:13px;font-weight:700;}
+  .dso-sub{font-size:11px;color:var(--text-soft);margin-top:1px;}
+
+  .workday-toggle{display:flex;gap:6px;}
+  .workday-toggle button{
+    flex:1;height:38px;border:1.5px solid var(--border);border-radius:10px;background:#fff;
+    font-size:13px;font-weight:700;color:var(--text-soft);cursor:pointer;
+  }
+  .workday-toggle button:hover{border-color:var(--border-strong,#d0d0ca);}
+  .workday-toggle button.active{background:linear-gradient(135deg,var(--green),var(--teal));border-color:transparent;color:#fff;}
+
+  /* Customize-dashboard reorder/hide list */
+  .dash-customize-list{display:flex;flex-direction:column;gap:8px;}
+  .dc-row{
+    display:flex;align-items:center;gap:10px;border:1.5px solid var(--border);border-radius:12px;
+    padding:10px 12px;transition:opacity .1s ease;
+  }
+  .dc-row.dc-hidden-row{opacity:.55;}
+  .dc-label{flex:1;min-width:0;font-size:13px;font-weight:600;}
+  .dc-actions{display:flex;gap:6px;flex-shrink:0;}
+  .dc-btn{
+    border:1.5px solid var(--border);background:#fff;border-radius:8px;height:30px;min-width:30px;
+    font-size:12px;font-weight:700;color:var(--text-soft);cursor:pointer;padding:0 8px;
+  }
+  .dc-btn:hover:not(:disabled){border-color:var(--border-strong,#d0d0ca);color:var(--text);}
+  .dc-btn:disabled{opacity:.35;cursor:not-allowed;}
+  .dc-btn.dc-eye-active{background:linear-gradient(135deg,var(--green),var(--teal));border-color:transparent;color:#fff;}
+
+  /* ---------- Simple mode dashboard ---------- */
+  .simple-stat-strip{
+    display:flex;background:#fff;border:1px solid var(--border);border-radius:14px;
+    padding:16px 18px;margin-bottom:20px;max-width:480px;margin-left:auto;margin-right:auto;
+  }
+  .simple-stat-strip > div{flex:1;text-align:center;}
+  .simple-stat-strip > div:first-child{border-right:1px solid var(--border);}
+  .simple-stat-label{font-size:11px;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.03em;}
+  .simple-stat-value{font-size:24px;font-weight:800;font-family:var(--font-money);margin-top:2px;}
+  .simple-stat-outstanding{color:var(--amber);}
+  .simple-btn-stack{display:flex;flex-direction:column;gap:14px;max-width:480px;margin:0 auto;}
+  .simple-btn{
+    border:none;border-radius:18px;padding:26px 20px;font-size:17px;font-weight:800;color:#fff;
+    display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;
+  }
+  .simple-btn-add{background:linear-gradient(135deg,#4ade80,#16a34a);box-shadow:0 10px 20px -10px rgba(22,163,74,.55);}
+  .simple-btn-add:hover{background:linear-gradient(135deg,#3fd473,#149049);}
+  .simple-btn-plus{font-size:22px;line-height:1;}
+  .simple-btn-view{background:linear-gradient(135deg,#60a5fa,#2563eb);box-shadow:0 10px 20px -10px rgba(37,99,235,.55);}
+  .simple-btn-view:hover{background:linear-gradient(135deg,#4f97f5,#1e56cc);}
+  .simple-recent{max-width:480px;margin:18px auto 0;display:flex;flex-direction:column;gap:8px;}
+  .backup-status{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:12px 0 4px;background:#fbfbfc;
+  }
+  .backup-status.connected{background:var(--green-light);border-color:#cdeed9;}
+  .backup-status .bs-text{font-size:13px;}
+  .backup-status .bs-text strong{display:block;font-size:13px;margin-bottom:2px;}
+  .backup-status .bs-sub{font-size:12px;color:var(--text-soft);}
+  .danger-zone{border:1px solid #f3d2d2;background:#fdf5f5;border-radius:14px;padding:16px;margin-top:16px;}
+  .danger-zone h3{margin:0 0 6px;font-size:14px;color:#a33;}
+  .danger-zone p{font-size:13px;color:var(--text-soft);margin:0 0 10px;}
+  .btn-danger{background:#e0463f;color:#fff;}
+  .btn-danger:hover{background:#c93a34;}
+  .settings-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+  .save-toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--text);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;
+    opacity:0;transition:all .25s ease;pointer-events:none;z-index:60;
+  }
+  .save-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* Dashboard */
+  .dash-greeting{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .dash-greeting h2{margin:0 0 2px;font-size:22px;letter-spacing:-0.01em;}
+  .dash-greeting p{margin:0;font-size:13px;color:var(--text-soft);}
+
+  .pay-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:0;}
+  @media (max-width:860px){.pay-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media (max-width:480px){.pay-stat-grid{grid-template-columns:1fr;}}
+  /* On desktop, payment-status sits in the narrower right-hand column of the
+     dashboard split (~40% of main-inner) — 4-across is too tight there even
+     though the viewport itself is wide, so force 2x2 specifically in that
+     context (a plain max-width media query can't see this, since it only
+     knows viewport width, not this column's actual rendered width). */
+  @media (min-width:1000px){ #dash-pay-section .pay-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  .pay-stat-earned .value{color:#fff;}
+  .pay-stat-paid .value{color:#fff;}
+  .pay-stat-outstanding .value{color:#fff;}
+  .pay-stat-overdue .value{color:#fff;}
+  .section-label{font-size:12px;font-weight:800;color:var(--text-soft);text-transform:uppercase;letter-spacing:.04em;margin:4px 0 10px;text-align:center;}
+  .badge-hit{
+    display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.9);color:var(--green-dark);
+    font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;margin-left:6px;vertical-align:2px;
+  }
+
+  /* ---------- Dashboard body: single column on mobile, two spacious columns on
+     desktop. Uses named grid-template-areas (not auto-placement/order) so each
+     breakpoint gets a fully explicit, deterministic layout. ---------- */
+  .dash-body{
+    display:grid;grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"hero" "pay" "heatmap" "achv" "showmore" "calendar";
+  }
+  .dash-body > *{min-width:0;}
+  .dash-hidden{display:none !important;}
+  #dash-hero-wrap{grid-area:hero;}
+  #dash-pay-section{grid-area:pay;margin-bottom:16px;}
+  #dash-heatmap-card{grid-area:heatmap;}
+  #dash-achv-card{grid-area:achv;}
+  #dash-showmore-wrap{grid-area:showmore;}
+  #dash-calendar-wrap{grid-area:calendar;}
+  @media (min-width:1000px){
+    .dash-body{
+      grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);column-gap:22px;row-gap:0;align-items:start;
+      grid-template-areas:
+        "calendar hero"
+        "calendar pay"
+        "heatmap  achv"
+        "heatmap  showmore";
+    }
+  }
+  /* List mode: the calendar card (now showing the deal log) sits right above
+     payment status, and the heatmap/achievements cards drop out entirely — a
+     decluttered, log-first layout, on both mobile and desktop. Driven by
+     calendarViewMode, not just the dashboardStyle setting, so it applies whenever
+     the deal list is actually showing. */
+  .dash-body.list-active{grid-template-areas:"hero" "calendar" "pay" "showmore";}
+  .dash-body.list-active #dash-heatmap-card,
+  .dash-body.list-active #dash-achv-card{display:none;}
+  @media (min-width:1000px){
+    .dash-body.list-active{
+      grid-template-columns:minmax(0,1fr);
+      grid-template-areas:"hero" "calendar" "pay" "showmore";
+    }
+  }
+  .swipe-hint{display:none;text-align:center;font-size:11px;color:var(--text-soft);margin:-2px 0 6px;}
+  @media (max-width:768px){.swipe-hint{display:block;}}
+
+  /* Today's Overview ring */
+  .ring-wrap{position:relative;width:128px;height:128px;margin:0 auto 16px;}
+  .ring{width:128px;height:128px;border-radius:50%;background:#eef0f3;}
+  .ring-hole{
+    position:absolute;inset:12px;background:#fff;border-radius:50%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .ring-pct{font-family:var(--font-money);font-weight:800;font-size:22px;color:var(--green-dark);letter-spacing:-0.02em;}
+  .ring-caption{font-size:10px;color:var(--text-soft);text-transform:uppercase;font-weight:700;letter-spacing:.03em;margin-top:2px;}
+  .overview-row{
+    display:flex;justify-content:space-between;align-items:center;padding:8px 0;
+    border-bottom:1px solid var(--border);font-size:13px;color:var(--text-soft);font-weight:600;
+  }
+  .overview-row:last-of-type{border-bottom:none;}
+  .overview-row .money{font-size:15px;color:var(--text);}
+
+  /* Large calendar (Calendar tab) */
+  .cal-grid-large .day-cell{min-height:96px;}
+  .cal-grid-large .num{font-size:14px;}
+  .cal-grid-large .amt{font-size:15px;}
+
+  .heatmap-scroll{overflow-x:auto;padding-bottom:4px;max-width:100%;}
+  .heatmap-months{display:grid;grid-auto-flow:column;gap:3px;width:max-content;margin-bottom:4px;}
+  .heatmap-month-label{width:11px;font-size:10px;font-weight:700;color:var(--text-soft);overflow:visible;white-space:nowrap;}
+  .heatmap-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,11px);gap:3px;width:max-content;}
+  .heat-cell{width:11px;height:11px;border-radius:2px;background:#e6e8ec;}
+  .heat-cell.heat-empty{background:transparent;}
+  .heat-cell.heat-0{background:#e6e8ec;}
+  .heat-cell.heat-1{background:#bbf0cf;}
+  .heat-cell.heat-2{background:#6fd99a;}
+  .heat-cell.heat-3{background:#2fb765;}
+  .heat-cell.heat-4{background:#0f7a37;}
+
+  .achv-groups{display:flex;flex-direction:column;gap:16px;}
+  .achv-category-label{font-size:11px;font-weight:800;color:var(--text-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;}
+  .achv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px;}
+  @media (max-width:480px){.achv-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}}
+  @media (max-width:360px){.achv-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  .achv-badge{
+    border:1px solid var(--border);border-radius:12px;padding:10px 6px;text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    min-width:0;
+  }
+  .achv-badge .achv-icon{font-size:26px;filter:grayscale(1);opacity:.35;}
+  .achv-badge.unlocked .achv-icon{filter:none;opacity:1;}
+  .achv-badge .achv-label{font-size:11px;font-weight:700;line-height:1.2;word-break:break-word;}
+  .achv-badge .achv-progress{width:100%;height:5px;border-radius:4px;background:#eef0f3;overflow:hidden;margin-top:2px;}
+  .achv-badge .achv-progress i{display:block;height:100%;background:var(--green);}
+
+  .recent-item{
+    display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);
+  }
+  .recent-item:last-child{border-bottom:none;}
+  .recent-item .r-client{font-size:13px;font-weight:700;}
+  .recent-item .r-date{font-size:11px;color:var(--text-soft);}
+  .recent-item .r-amt{font-weight:700;font-size:14px;}
+  .recent-item .r-amt.pending{color:var(--amber);}
+  .recent-item .r-amt.paid{color:var(--green-dark);}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">D</div>
+      <div>
+        <h1>Daybook</h1>
+        <span>Track. Earn. Grow.</span>
+      </div>
+    </div>
+
+    <nav class="tabs">
+      <button data-tab="dashboard" class="active"><span class="nav-icon">🏠</span> Dashboard</button>
+      <button data-tab="calendar"><span class="nav-icon">📅</span> Calendar</button>
+      <button data-tab="pending"><span class="nav-icon">🧾</span> Invoices<span class="tab-badge" id="pending-badge" style="display:none;"></span></button>
+      <button data-tab="vision"><span class="nav-icon">🎯</span> Vision Board</button>
+      <button data-tab="clients"><span class="nav-icon">👥</span> Clients</button>
+      <button data-tab="analytics"><span class="nav-icon">📊</span> Analytics</button>
+      <button data-tab="settings"><span class="nav-icon">⚙️</span> Settings</button>
+    </nav>
+
+    <div class="sb-card sb-level-card">
+      <div class="sb-level-head">
+        <span class="sb-level-title" id="sb-level-label">Level 1</span>
+      </div>
+      <div class="sb-xp" id="sb-xp-text">0 XP</div>
+      <div class="progress-track dark"><div class="progress-fill" id="sb-level-bar" style="width:0%"></div></div>
+      <div class="sb-level-sub" id="sb-level-sub"></div>
+    </div>
+
+    <div class="sb-card sb-quote-card">
+      <div class="sb-quote-mark">&ldquo;</div>
+      <div class="sb-quote-text" id="sb-quote-text">Loading today's quote…</div>
+      <div class="sb-quote-attr">— Daybook</div>
+    </div>
+
+    <div class="sb-profile">
+      <div class="sb-avatar" id="sb-avatar">D</div>
+      <div>
+        <div class="sb-name" id="sb-profile-name">Your name</div>
+        <div class="sb-sub-small">Local &amp; private</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main"><div class="main-inner">
+
+  <div id="backup-banner"></div>
+
+  <!-- DASHBOARD VIEW -->
+  <section id="view-dashboard" class="view active">
+
+    <div class="dash-greeting">
+      <div>
+        <p class="dash-date" id="dash-date-text">TODAY</p>
+        <h2 id="dash-greeting-text">Good day!</h2>
+        <p id="dash-greeting-sub">Let's crush today's goal.</p>
+      </div>
+      <button class="btn btn-primary dash-add-desktop" id="dash-add-income-btn">+ Add income</button>
+    </div>
+
+    <div id="dash-simple-view" style="display:none;">
+      <div class="simple-stat-strip">
+        <div>
+          <div class="simple-stat-label">This month</div>
+          <div class="simple-stat-value" id="simple-month-value">$0</div>
+        </div>
+        <div>
+          <div class="simple-stat-label">Outstanding</div>
+          <div class="simple-stat-value simple-stat-outstanding" id="simple-outstanding-value">$0</div>
+        </div>
+      </div>
+
+      <div class="simple-btn-stack">
+        <button class="simple-btn simple-btn-add" id="simple-add-btn">
+          <span class="simple-btn-plus">+</span> Add income
+        </button>
+        <button class="simple-btn simple-btn-view" id="simple-view-recent-btn">View recent</button>
+      </div>
+
+      <div class="simple-recent" id="simple-recent" style="display:none;"></div>
+    </div>
+
+    <div class="dash-body" id="dash-body">
+
+      <div id="dash-hero-wrap">
+        <div class="empty-hero" id="dash-empty-hero" style="display:none;">
+          <div class="empty-hero-icon"><span class="emoji-white">💵</span></div>
+          <h3>Log your first job</h3>
+          <p>Every entry counts the moment you finish the work, whether or not you've been paid yet.</p>
+          <button class="btn" id="dash-empty-add-btn">Add your first entry</button>
+        </div>
+
+        <div class="hero-card" id="dash-hero-card">
+          <div class="ring-wrap">
+            <div class="ring" id="today-ring"></div>
+            <div class="ring-hole">
+              <div class="ring-pct" id="today-ring-pct">0%</div>
+              <div class="ring-caption">toward pace</div>
+            </div>
+          </div>
+          <p class="hero-label" id="dash-today-label">Today</p>
+          <p class="hero-value" id="dash-today-value">$0<span id="dash-today-badge"></span></p>
+          <p class="hero-sub" id="dash-today-sub"></p>
+          <div class="hero-detail-rows">
+            <div class="overview-row"><span>Daily goal</span><span class="money" id="overview-goal">$0</span></div>
+            <div class="overview-row"><span>Earned today</span><span class="money" id="overview-earned">$0</span></div>
+            <div class="overview-row"><span id="overview-remaining-label">Remaining</span><span class="money" id="overview-remaining">$0</span></div>
+          </div>
+          <div class="hero-chip-row">
+            <div class="hero-chip">
+              <p class="hero-chip-label">STREAK</p>
+              <p class="hero-chip-value" id="dash-streak-value">0</p>
+              <p class="hero-chip-sub" id="dash-streak-sub">Best: 0 days</p>
+            </div>
+            <div class="hero-chip">
+              <p class="hero-chip-label">WEEK</p>
+              <p class="hero-chip-value" id="dash-week-value">$0</p>
+              <p class="hero-chip-sub" id="dash-week-sub">of $0 goal</p>
+              <div class="progress-wrap" style="display:none;"><div class="progress-track"><div class="progress-fill" id="dash-week-bar" style="width:0%"></div></div></div>
+            </div>
+            <div class="hero-chip">
+              <p class="hero-chip-label">MONTH</p>
+              <p class="hero-chip-value" id="dash-month-value">$0</p>
+              <p class="hero-chip-sub" id="dash-month-sub">of $0 goal</p>
+              <div class="progress-wrap" style="display:none;"><div class="progress-track"><div class="progress-fill" id="dash-month-bar" style="width:0%"></div></div></div>
+            </div>
+          </div>
+          <button class="hero-view-btn" id="view-today-btn">View today's transactions →</button>
+        </div>
+      </div>
+
+      <div id="dash-pay-section">
+        <div class="section-label">Payment status</div>
+        <div class="pay-stat-grid">
+          <div class="card stat-card pay-stat-earned">
+            <div class="label">Earned this month</div>
+            <div class="value" id="pay-earned-month">$0</div>
+          </div>
+          <div class="card stat-card pay-stat-paid">
+            <div class="label">Paid this month</div>
+            <div class="value" id="pay-paid-month">$0</div>
+          </div>
+          <div class="card stat-card pay-stat-outstanding">
+            <div class="label">Outstanding income</div>
+            <div class="value" id="pay-outstanding">$0</div>
+            <div class="sub" id="pay-outstanding-sub"></div>
+          </div>
+          <div class="card stat-card pay-stat-overdue">
+            <div class="label">Overdue income</div>
+            <div class="value" id="pay-overdue">$0</div>
+            <div class="sub" id="pay-overdue-sub"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="dash-calendar-wrap">
+        <div class="card">
+          <div class="cal-header">
+            <button class="icon-btn" id="prev-month">‹</button>
+            <div class="month-label" id="month-label">Month Year</div>
+            <div class="cal-nav">
+              <button class="today-btn" id="today-btn">Today</button>
+              <button class="icon-btn" id="next-month">›</button>
+            </div>
+          </div>
+          <div class="cal-filter-row">
+            <div class="cal-filter" id="cal-filter-mini">
+              <button data-filter="earned" class="active">Earned</button>
+              <button data-filter="paid">Paid</button>
+              <button data-filter="both">Both</button>
+            </div>
+            <div class="cal-mode-toggle" id="cal-mode-toggle-mini">
+              <button data-mode="grid" class="active" aria-label="Grid view">Grid</button>
+              <button data-mode="list" aria-label="List view">List</button>
+            </div>
+          </div>
+          <p class="swipe-hint" id="swipe-hint-mini">swipe to change month</p>
+          <div id="cal-grid-wrap-mini">
+            <div class="weekday-row">
+              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+            <div class="cal-grid" id="cal-grid"></div>
+            <div class="legend">
+              <span><i style="background:#e6e8ec"></i> No income</span>
+              <span><i style="background:#2563eb"></i> Pending only</span>
+              <span><i style="background:#dc2626"></i> Below goal</span>
+              <span><i style="background:var(--green)"></i> Goal hit</span>
+              <span><i style="background:#eab308"></i> Goal crushed (2x+)</span>
+              <span><i style="background:#a855f7"></i> Best day ever</span>
+              <span><span class="emoji-mono">⏳</span> Awaiting payment</span>
+            </div>
+          </div>
+          <div class="deal-list" id="deal-list-mini" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div class="card" id="dash-heatmap-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <h3 style="margin:0;font-size:15px;">Income heatmap</h3>
+          <div class="cal-nav">
+            <button class="icon-btn" id="heatmap-prev-year">‹</button>
+            <span id="heatmap-year-label" style="font-weight:700;font-size:14px;padding:0 4px;"></span>
+            <button class="icon-btn" id="heatmap-next-year">›</button>
+          </div>
+        </div>
+        <div class="heatmap-scroll">
+          <div class="heatmap-months" id="heatmap-months"></div>
+          <div class="heatmap-grid" id="heatmap-grid"></div>
+        </div>
+        <div class="legend" style="margin-top:10px;">
+          <span><i style="background:#e6e8ec"></i> $0</span>
+          <span><i style="background:#bbf0cf"></i> $1–249</span>
+          <span><i style="background:#6fd99a"></i> $250–499</span>
+          <span><i style="background:#2fb765"></i> $500–999</span>
+          <span><i style="background:#0f7a37"></i> $1,000+</span>
+        </div>
+      </div>
+
+      <div class="card" id="dash-achv-card">
+        <h3 style="margin:0 0 4px;font-size:15px;">Achievements</h3>
+        <p style="font-size:12px;color:var(--text-soft);margin:0 0 12px;">Milestones you've earned along the way.</p>
+        <div class="achv-groups" id="achv-grid"></div>
+      </div>
+
+      <div id="dash-showmore-wrap">
+        <button class="showmore-btn" id="dash-showmore-btn">Show more · insight, replay, recent activity, level</button>
+        <div class="showmore-content" id="dash-showmore-content">
+          <div class="card" id="dash-insight-card" style="display:none;">
+            <div class="label" style="margin-bottom:8px;">💡 Insight</div>
+            <div id="dash-insight-text" style="font-size:14px;line-height:1.5;font-family:var(--font-body);"></div>
+          </div>
+
+          <div class="card stat-card">
+            <div class="label">This year (earned)</div>
+            <div class="value" id="dash-year-value">$0</div>
+            <div class="sub" id="dash-year-sub">of $0 goal</div>
+            <div class="progress-wrap"><div class="progress-track"><div class="progress-fill" id="dash-year-bar" style="width:0%"></div></div></div>
+          </div>
+
+          <div class="card" style="text-align:center;">
+            <h3 style="margin:0 0 6px;font-size:15px;">Earnings Replay</h3>
+            <p style="font-size:12px;color:var(--text-soft);margin:0 0 12px;">Watch this month roll in, day by day.</p>
+            <button class="btn btn-primary" id="dash-replay-btn" style="width:100%;">▶ Replay <span id="dash-replay-month"></span></button>
+          </div>
+
+          <div class="card">
+            <h3 style="margin:0 0 6px;font-size:15px;">Recent activity</h3>
+            <div id="dash-recent-list"></div>
+          </div>
+
+          <div class="card">
+            <div class="label" style="margin-bottom:6px;">Lifetime level</div>
+            <div class="value" id="dash-level-value">Level 1</div>
+            <div class="sub" id="dash-xp-sub"></div>
+            <div class="progress-wrap"><div class="progress-track"><div class="progress-fill" id="dash-level-bar" style="width:0%"></div></div></div>
+            <div class="sub" id="dash-level-remaining" style="margin-top:6px;"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CALENDAR VIEW (large) -->
+  <section id="view-calendar" class="view">
+    <div class="card">
+      <div class="cal-header">
+        <button class="icon-btn" id="prev-month-large">‹</button>
+        <div class="month-label" id="month-label-large">Month Year</div>
+        <div class="cal-nav">
+          <button class="today-btn" id="today-btn-large">Today</button>
+          <button class="icon-btn" id="next-month-large">›</button>
+        </div>
+      </div>
+      <div class="cal-filter-row">
+        <div class="cal-filter" id="cal-filter-large">
+          <button data-filter="earned" class="active">Earned</button>
+          <button data-filter="paid">Paid</button>
+          <button data-filter="both">Both</button>
+        </div>
+      </div>
+      <p class="swipe-hint">swipe to change month</p>
+      <div class="weekday-row">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+      <div class="cal-grid cal-grid-large" id="cal-grid-large"></div>
+      <div class="legend">
+        <span><i style="background:#e6e8ec"></i> No income</span>
+        <span><i style="background:#2563eb"></i> Pending only</span>
+        <span><i style="background:#dc2626"></i> Below goal</span>
+        <span><i style="background:var(--green)"></i> Goal hit</span>
+        <span><i style="background:#eab308"></i> Goal crushed (2x+)</span>
+        <span><i style="background:#a855f7"></i> Best day ever</span>
+        <span>⏳ Awaiting payment</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PENDING / OUTSTANDING VIEW -->
+  <section id="view-pending" class="view">
+    <div class="card stat-card">
+      <div class="label" id="stat-pending-label">Outstanding (earned, not yet fully paid)</div>
+      <div class="value" id="stat-pending-total">$0</div>
+      <div class="sub" id="stat-pending-count">0 entries waiting on payment</div>
+    </div>
+    <div class="card">
+      <div class="invoice-filters">
+        <input type="text" id="inv-search" placeholder="Search by client, category, or note...">
+        <select id="inv-status-filter">
+          <option value="outstanding">Outstanding</option>
+          <option value="all">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="invoiced">Invoiced</option>
+          <option value="partial">Partially paid</option>
+          <option value="overdue">Overdue</option>
+          <option value="paid">Paid</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <button type="button" class="btn btn-secondary" id="inv-export-btn" style="flex:0 0 auto;">Export CSV</button>
+      </div>
+      <div id="pending-table-wrap"></div>
+    </div>
+  </section>
+
+  <!-- VISION BOARD VIEW -->
+  <section id="view-vision" class="view">
+    <div class="card vision-intro">
+      <div>
+        <h2 style="margin:0 0 4px;font-size:16px;">Vision Board</h2>
+        <p style="margin:0;font-size:13px;color:var(--text-soft);">What you're building toward. Add a goal, a photo of it, and watch progress fill in as it gets paid.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-secondary" id="vision-focus-btn">Focus mode</button>
+        <button class="btn btn-primary" id="vision-add-btn">+ Add goal</button>
+      </div>
+    </div>
+    <div class="vision-grid" id="vision-grid"></div>
+  </section>
+
+  <!-- ANALYTICS VIEW -->
+  <section id="view-analytics" class="view">
+    <div class="analytics-grid">
+      <div class="card stat-card">
+        <div class="label">Total earned</div>
+        <div class="value" id="an-total-earned">$0</div>
+        <div class="sub">Lifetime, excludes cancelled</div>
+      </div>
+      <div class="card stat-card">
+        <div class="label">Total paid</div>
+        <div class="value" id="an-total-paid">$0</div>
+        <div class="sub">Actually received, lifetime</div>
+      </div>
+      <div class="card stat-card">
+        <div class="label">Outstanding balance</div>
+        <div class="value" id="an-outstanding">$0</div>
+        <div class="sub">Earned minus paid</div>
+      </div>
+      <div class="card stat-card">
+        <div class="label">Collection rate</div>
+        <div class="value" id="an-collection-rate">0%</div>
+        <div class="sub">Paid ÷ earned</div>
+      </div>
+      <div class="card stat-card">
+        <div class="label">Avg. days to get paid</div>
+        <div class="value" id="an-avg-days">—</div>
+        <div class="sub">From earned date to paid date</div>
+      </div>
+      <div class="card stat-card">
+        <div class="label">Overdue payments</div>
+        <div class="value" id="an-overdue-count">0</div>
+        <div class="sub" id="an-overdue-amount">$0 outstanding</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 4px;font-size:15px;">Monthly earned vs. paid</h3>
+      <p style="font-size:12px;color:var(--text-soft);margin:0 0 4px;">Last 12 months.</p>
+      <div class="bar-chart" id="an-bar-chart"></div>
+      <div class="bar-chart-legend">
+        <span><i style="background:var(--green)"></i> Earned</span>
+        <span><i style="background:#2563eb"></i> Paid</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 12px;font-size:15px;">Earned by category</h3>
+      <div id="an-category-wrap"></div>
+    </div>
+  </section>
+
+  <!-- CLIENTS VIEW -->
+  <section id="view-clients" class="view">
+    <div class="card">
+      <input class="search-box" type="text" id="client-search" placeholder="Search clients or vendors...">
+      <div id="clients-table-wrap"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS VIEW -->
+  <section id="view-settings" class="view">
+    <div class="card">
+      <h2 style="margin-top:0;font-size:16px;">Your goal</h2>
+      <div class="field" style="margin-bottom:14px;">
+        <label>Your name (optional, for the dashboard greeting)</label>
+        <input type="text" id="input-display-name" placeholder="e.g. Briahna">
+      </div>
+      <div class="settings-grid">
+        <div class="field">
+          <label>Daily income goal ($)</label>
+          <input type="number" id="input-daily-goal" min="0" step="1">
+        </div>
+        <div class="field">
+          <label>Working days per month</label>
+          <input type="number" id="input-working-days" min="1" max="31" step="1">
+        </div>
+      </div>
+      <div class="field" style="margin-top:14px;">
+        <label>Which days do you work?</label>
+        <p style="font-size:12px;color:var(--text-soft);margin:0 0 8px;">Your income streak only counts these days — weekends (or whichever days you toggle off) won't break it.</p>
+        <div class="workday-toggle" id="workday-toggle">
+          <button data-day="0">S</button>
+          <button data-day="1">M</button>
+          <button data-day="2">T</button>
+          <button data-day="3">W</button>
+          <button data-day="4">T</button>
+          <button data-day="5">F</button>
+          <button data-day="6">S</button>
+        </div>
+      </div>
+      <div class="computed">
+        <div>
+          <div class="c-label">Weekly goal</div>
+          <div class="c-value" id="computed-weekly">$0</div>
+        </div>
+        <div>
+          <div class="c-label">Monthly goal</div>
+          <div class="c-value" id="computed-monthly">$0</div>
+        </div>
+        <div>
+          <div class="c-label">Yearly goal</div>
+          <div class="c-value" id="computed-yearly">$0</div>
+        </div>
+        <div>
+          <div class="c-label">Working days / year</div>
+          <div class="c-value" id="computed-working-days-year">0</div>
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn btn-primary" id="save-settings">Save goal</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;font-size:16px;">Dashboard style</h2>
+      <p style="font-size:13px;color:var(--text-soft);margin-top:0;">Choose how your home screen looks. You can change this anytime.</p>
+      <div class="dash-style-options" id="dash-style-options">
+        <label class="dash-style-option" data-style="simple">
+          <div class="dso-icon">▢▢</div>
+          <div class="dso-text">
+            <div class="dso-title">Simple</div>
+            <div class="dso-sub">Just two buttons — add income, view recent.</div>
+          </div>
+          <input type="radio" name="dashboard-style" value="simple">
+        </label>
+        <label class="dash-style-option" data-style="standard">
+          <div class="dso-icon">▦</div>
+          <div class="dso-text">
+            <div class="dso-title">Standard</div>
+            <div class="dso-sub">Full dashboard — goals, streaks, calendar, achievements.</div>
+          </div>
+          <input type="radio" name="dashboard-style" value="standard">
+        </label>
+        <label class="dash-style-option" data-style="list">
+          <div class="dso-icon">☰</div>
+          <div class="dso-text">
+            <div class="dso-title">List</div>
+            <div class="dso-sub">Same dashboard, deals shown as a running log instead of a calendar grid.</div>
+          </div>
+          <input type="radio" name="dashboard-style" value="list">
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;font-size:16px;">Customize dashboard</h2>
+      <p style="font-size:13px;color:var(--text-soft);margin-top:0;">
+        Reorder sections with the arrows, or hide the ones you don't use. (List dashboard style keeps its own fixed layout, but hidden sections still stay hidden there too.)
+      </p>
+      <div class="dash-customize-list" id="dash-customize-list"></div>
+      <div class="settings-actions">
+        <button class="btn btn-secondary" id="dash-customize-reset">Reset to default order</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;font-size:16px;">Your data</h2>
+      <p style="font-size:13px;color:var(--text-soft);margin-top:0;">
+        This app only stores data in this browser's local storage on this device. It is <strong>not</strong> synced anywhere,
+        so clearing your browser data, switching browsers, or using a different computer will not carry it over.
+        Use the options below to keep a real copy safe.
+      </p>
+
+      <div class="backup-status" id="backup-status">
+        <div class="bs-text">
+          <strong id="backup-status-title">Checking backup support…</strong>
+          <div class="bs-sub" id="backup-status-sub"></div>
+        </div>
+        <button class="btn btn-secondary" id="connect-backup-btn">Connect a backup file</button>
+      </div>
+
+      <div class="settings-actions">
+        <button class="btn btn-secondary" id="export-data">Export backup (.json)</button>
+        <button class="btn btn-secondary" id="import-data-btn">Import backup</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none;">
+      </div>
+      <div class="danger-zone">
+        <h3>Clear all data</h3>
+        <p>Permanently deletes every entry and resets your goal. This cannot be undone.</p>
+        <button class="btn btn-danger" id="clear-data">Clear all data</button>
+      </div>
+    </div>
+  </section>
+
+  </div></div>
+
+  <!-- MOBILE BOTTOM NAV + FAB -->
+  <nav class="bottom-nav">
+    <button class="bn-item active" data-tab="dashboard"><span class="bn-icon">🏠</span>Home</button>
+    <button class="bn-item" data-tab="calendar"><span class="bn-icon">📅</span>Calendar</button>
+    <div class="bn-fab-slot"></div>
+    <button class="bn-item" data-tab="pending"><span class="bn-icon">🧾</span>Invoices<span class="tab-badge" id="pending-badge-mobile" style="display:none;"></span></button>
+    <button class="bn-item" id="bn-more-btn"><span class="bn-icon">⋯</span>More</button>
+  </nav>
+  <button class="bn-fab" id="bn-fab" aria-label="Add income">+</button>
+  <div class="bn-more-popover" id="bn-more-popover">
+    <button data-tab="vision"><span class="nav-icon">🎯</span> Vision Board</button>
+    <button data-tab="clients"><span class="nav-icon">👥</span> Clients</button>
+    <button data-tab="analytics"><span class="nav-icon">📊</span> Analytics</button>
+    <button data-tab="settings"><span class="nav-icon">⚙️</span> Settings</button>
+  </div>
+</div>
+
+<!-- DAY MODAL -->
+<div class="overlay" id="day-overlay">
+  <div class="modal">
+    <button class="close-x" id="close-modal">✕</button>
+    <h2 id="modal-date">Date</h2>
+    <div class="modal-sub" id="modal-goal-line">Goal for this day: $0</div>
+    <div class="day-total" id="modal-day-total">Logged so far: $0</div>
+
+    <div class="entry-list" id="entry-list"></div>
+
+    <form class="entry-form" id="entry-form">
+      <div class="field">
+        <label>Amount ($)</label>
+        <input type="number" id="input-amount" min="0" step="0.01" placeholder="0.00" required>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Client / vendor</label>
+          <input type="text" id="input-client" list="client-datalist" placeholder="e.g. Acme Co." autocomplete="off">
+          <datalist id="client-datalist"></datalist>
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="input-category">
+            <option value="Consulting">Consulting</option>
+            <option value="Freelance/Project">Freelance / Project</option>
+            <option value="Retainer">Retainer</option>
+            <option value="Product Sales">Product Sales</option>
+            <option value="Services">Services</option>
+            <option value="Coaching">Coaching</option>
+            <option value="Bonus/Tip">Bonus / Tip</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Note (optional)</label>
+        <input type="text" id="input-note" placeholder="e.g. Consulting invoice">
+      </div>
+      <div class="field">
+        <label>Payment status</label>
+        <select id="input-status">
+          <option value="pending">Pending</option>
+          <option value="invoiced">Invoiced</option>
+          <option value="partial">Partially Paid</option>
+          <option value="paid">Paid</option>
+          <option value="overdue">Overdue</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Expected payment date (optional)</label>
+          <input type="date" id="input-expected-date">
+        </div>
+        <div class="field conditional-field" id="paid-date-field">
+          <label>Date paid</label>
+          <input type="date" id="input-paid-date">
+        </div>
+      </div>
+      <div class="field conditional-field" id="paid-amount-field">
+        <label>Amount received so far ($)</label>
+        <input type="number" id="input-paid-amount" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-primary" id="entry-form-submit" style="flex:1;">Add entry</button>
+        <button type="button" class="btn btn-secondary" id="entry-form-cancel" style="display:none;">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EARNINGS REPLAY -->
+<div class="overlay" id="replay-overlay">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <button class="close-x" id="replay-close">✕</button>
+    <h2 id="replay-month-label">Month</h2>
+    <div id="replay-playing">
+      <div style="font-size:13px;color:var(--text-soft);margin:14px 0 4px;" id="replay-day">Day 0 of 0</div>
+      <div style="font-size:36px;font-weight:800;color:var(--green-dark);" id="replay-cumulative">$0</div>
+      <div style="font-size:13px;color:var(--text-soft);margin-top:4px;" id="replay-day-amt">—</div>
+      <div class="progress-wrap"><div class="progress-track"><div class="progress-fill" id="replay-progress-fill" style="width:0%"></div></div></div>
+      <button class="btn btn-secondary" id="replay-skip" style="margin-top:16px;">Skip to summary</button>
+    </div>
+    <div id="replay-summary" style="display:none;">
+      <div style="font-size:13px;color:var(--text-soft);margin:14px 0 4px;">Total earned</div>
+      <div style="font-size:36px;font-weight:800;color:var(--green-dark);" id="replay-summary-total">$0</div>
+      <div style="margin-top:14px;display:flex;justify-content:space-around;">
+        <div>
+          <div style="font-size:11px;color:var(--text-soft);text-transform:uppercase;font-weight:700;">Of goal</div>
+          <div style="font-weight:800;font-size:18px;" id="replay-summary-goal">0%</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-soft);text-transform:uppercase;font-weight:700;">Best day</div>
+          <div style="font-weight:800;font-size:14px;" id="replay-summary-best">—</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="replay-done" style="margin-top:18px;width:100%;">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACHIEVEMENT CELEBRATION -->
+<canvas id="confetti-canvas"></canvas>
+<div class="overlay" id="achv-overlay">
+  <div class="modal achv-celebrate-modal">
+    <button class="close-x" id="achv-celebrate-close">✕</button>
+    <div class="achv-celebrate-icon" id="achv-celebrate-icon">🏆</div>
+    <h2 class="achv-celebrate-title">Congratulations!</h2>
+    <div class="achv-celebrate-label" id="achv-celebrate-label">Achievement Name</div>
+    <p class="achv-celebrate-quote" id="achv-celebrate-quote">"Quote here."</p>
+    <button class="btn btn-primary" id="achv-celebrate-done" style="width:100%;">Keep going →</button>
+  </div>
+</div>
+
+<!-- VISION GOAL FORM -->
+<div class="overlay" id="vision-form-overlay">
+  <div class="modal">
+    <button class="close-x" id="vision-form-close">✕</button>
+    <h2 id="vision-form-title">Add a goal</h2>
+    <div class="modal-sub">A picture of what you're working toward.</div>
+    <form id="vision-form">
+      <div class="field">
+        <label>Photo</label>
+        <input type="file" id="vf-input-image" accept="image/*">
+        <div class="field-hint">Optional, but a picture is a lot more motivating than a blank card.</div>
+        <div id="vf-image-preview"></div>
+      </div>
+      <div class="field">
+        <label>Title</label>
+        <input type="text" id="vf-input-title" placeholder="e.g. Down payment on a truck">
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="vf-input-has-target">
+        <label for="vf-input-has-target">Track a dollar target for this one</label>
+      </div>
+      <div class="field conditional-field" id="vf-target-field">
+        <label>Target amount ($)</label>
+        <input type="number" id="vf-input-target" min="0" step="1" placeholder="0">
+        <div class="field-hint">Progress fills in from what's been paid since you added this goal.</div>
+      </div>
+      <div class="field">
+        <label>Note (optional)</label>
+        <input type="text" id="vf-input-note" placeholder="Why this one matters">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-primary" id="vision-form-submit" style="flex:1;">Save goal</button>
+        <button type="button" class="btn btn-secondary" id="vision-form-delete" style="display:none;">Delete</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- VISION FOCUS MODE -->
+<div class="overlay vision-focus-overlay" id="vision-focus-overlay">
+  <button class="close-x vf-close" id="vision-focus-close">✕</button>
+  <button class="vf-nav vf-prev" id="vision-focus-prev" aria-label="Previous goal">‹</button>
+  <div class="vf-stage" id="vision-focus-stage"></div>
+  <button class="vf-nav vf-next" id="vision-focus-next" aria-label="Next goal">›</button>
+  <div class="vf-dots" id="vision-focus-dots"></div>
+</div>
+
+<div class="save-toast" id="toast">Saved</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'daybook_data_v1';
+  const LAST_BACKUP_KEY = 'daybook_last_backup_v1';
+  const fmt = (n) => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n||0);
+  const fmt2 = (n) => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0);
+
+  const STATUS_LABELS = { pending:'Pending', invoiced:'Invoiced', partial:'Partially Paid', paid:'Paid', overdue:'Overdue', cancelled:'Cancelled' };
+
+  function defaultData(){
+    return { settings:{ dailyGoal:300, workingDays:20, displayName:'', unlockedAchievements:[], dashboardStyle:'standard', workDays:[1,2,3,4,5], dashboardLayout:null }, entries:{}, visionGoals:[] };
+  }
+
+  // ---------- MIGRATION ----------
+  // Pre-v2 entries only had {amount, client, note, paid, paidDate}. The object key
+  // they were stored under was the only date that ever existed, used ambiguously for
+  // "when this happened." Going forward that key is explicitly the Earned Date, and
+  // status/paidDate/expectedPaymentDate/category are tracked separately. A legacy
+  // entry that has no `status` field is upgraded in place: if it has no `paidDate`
+  // either, that means it "only has a Paid Date" in the loosest sense (i.e. none at
+  // all) — so both the earned date (the storage key) and, if paid, the paid date
+  // collapse onto that one key, exactly matching the backward-compatibility rule.
+  function migrateEntry(e, dayKey){
+    if(e.status){
+      if(e.category === undefined) e.category = '';
+      if(e.expectedPaymentDate === undefined) e.expectedPaymentDate = null;
+      if(e.paidAmount === undefined){
+        e.paidAmount = e.status === 'paid' ? (Number(e.amount)||0) : (e.status === 'partial' ? (Number(e.paidAmount)||0) : 0);
+      }
+      return e;
+    }
+    const wasPaid = e.paid !== undefined ? !!e.paid : true; // no `paid` field at all = earliest legacy data, treat as paid
+    e.status = wasPaid ? 'paid' : 'pending';
+    e.paidDate = wasPaid ? (e.paidDate || dayKey) : null;
+    e.paidAmount = wasPaid ? (Number(e.amount)||0) : 0;
+    e.category = e.category || '';
+    e.expectedPaymentDate = e.expectedPaymentDate || null;
+    delete e.paid;
+    return e;
+  }
+  function migrateData(parsed){
+    Object.keys(parsed.entries || {}).forEach(key=>{
+      parsed.entries[key] = (parsed.entries[key]||[]).map(e => migrateEntry(e, key));
+    });
+    return parsed;
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultData();
+      const parsed = JSON.parse(raw);
+      if(!parsed.settings) parsed.settings = defaultData().settings;
+      if(parsed.settings.displayName === undefined) parsed.settings.displayName = '';
+      if(!Array.isArray(parsed.settings.unlockedAchievements)) parsed.settings.unlockedAchievements = [];
+      if(!['simple','standard','list'].includes(parsed.settings.dashboardStyle)) parsed.settings.dashboardStyle = 'standard';
+      if(!Array.isArray(parsed.settings.workDays) || !parsed.settings.workDays.length) parsed.settings.workDays = [1,2,3,4,5];
+      // dashboardLayout is opt-in: null/absent means "use the built-in default layout"
+      // untouched. Only sanitize it into a clean, complete, de-duplicated array when the
+      // user has actually customized something.
+      if(parsed.settings.dashboardLayout != null){
+        if(!Array.isArray(parsed.settings.dashboardLayout)){
+          parsed.settings.dashboardLayout = null;
+        } else {
+          const validIds = ['hero','pay','calendar','heatmap','achv','showmore'];
+          const seenIds = new Set();
+          const clean = parsed.settings.dashboardLayout
+            .filter(it=> it && validIds.includes(it.id) && !seenIds.has(it.id) && seenIds.add(it.id))
+            .map(it=> ({ id: it.id, hidden: !!it.hidden }));
+          validIds.forEach(id=>{ if(!clean.some(c=>c.id===id)) clean.push({id, hidden:false}); });
+          clean.forEach(c=>{ if(c.id==='hero') c.hidden = false; }); // hero is never hideable
+          parsed.settings.dashboardLayout = clean;
+        }
+      } else {
+        parsed.settings.dashboardLayout = null;
+      }
+      if(!parsed.entries) parsed.entries = {};
+      if(!Array.isArray(parsed.visionGoals)) parsed.visionGoals = [];
+      return migrateData(parsed);
+    }catch(e){ return defaultData(); }
+  }
+  function save(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    showToast('Saved');
+    updatePendingBadge();
+    renderClientDatalist();
+    writeToBackupFile();
+  }
+
+  // Remembers every client/vendor name you've typed before, so the field
+  // can suggest them instead of you retyping the same name each time.
+  function collectClientNames(){
+    const counts = {};
+    Object.values(data.entries).forEach(arr=> arr.forEach(e=>{
+      const name = (e.client || '').trim();
+      if(name) counts[name] = (counts[name] || 0) + 1;
+    }));
+    return Object.entries(counts)
+      .sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]))
+      .map(([name])=>name);
+  }
+  function renderClientDatalist(){
+    const dl = document.getElementById('client-datalist');
+    if(!dl) return;
+    dl.innerHTML = collectClientNames().map(n=> `<option value="${escapeHtml(n)}"></option>`).join('');
+  }
+  let toastTimer;
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove('show'), 1500);
+  }
+
+  // ---------- ENTRY STATUS HELPERS ----------
+  // "Earned" income counts the moment work is completed, regardless of payment status —
+  // everything except a cancelled entry, which represents work/invoicing that fell
+  // through and so was never really earned.
+  function isCancelled(e){ return e.status === 'cancelled'; }
+  function isFullyPaid(e){ return e.status === 'paid'; }
+  function isPartial(e){ return e.status === 'partial'; }
+  // "Settled" = nothing left to collect on (either fully paid, or written off as cancelled).
+  function isSettled(e){ return e.status === 'paid' || e.status === 'cancelled'; }
+  function earnedAmount(e){ return isCancelled(e) ? 0 : (Number(e.amount)||0); }
+  function paidAmountOf(e){
+    if(e.status === 'paid') return Number(e.amount)||0;
+    if(e.status === 'partial') return Number(e.paidAmount)||0;
+    return 0;
+  }
+  function outstandingAmountOf(e){ return Math.max(0, earnedAmount(e) - paidAmountOf(e)); }
+  function isOverdue(e, tKey){
+    if(e.status === 'overdue') return true;
+    if(e.status === 'pending' || e.status === 'invoiced' || e.status === 'partial'){
+      return !!(e.expectedPaymentDate && e.expectedPaymentDate < tKey);
+    }
+    return false;
+  }
+  // Legacy alias — old call sites treated "paid" as the boolean flag; keep it meaning
+  // "fully paid" so nothing silently breaks.
+  function isPaid(e){ return isFullyPaid(e); }
+
+  let data = load();
+  let viewDate = new Date(); // month currently displayed
+  viewDate.setDate(1);
+  let selectedDateStr = null;
+  let editingEntryIdx = null; // index into data.entries[selectedDateStr], or null when adding a new entry
+  let calFilter = 'earned'; // 'earned' | 'paid' | 'both' — calendar defaults to Earned
+  let calendarViewMode = 'grid'; // 'grid' | 'list' — the dashboard's mini calendar card
+  let calendarModeTouched = false; // true once the user manually flips the in-card toggle this session
+
+  // ---------- Dashboard customization (reorder / show-hide) ----------
+  // Six top-level sections a user can reorder or hide. `hero` can never be hidden — it's
+  // the one thing every dashboard style always shows. When data.settings.dashboardLayout
+  // is null (the default, untouched state) the built-in stylesheet layout is used as-is;
+  // nothing here runs. Only once a user opens Settings and actually reorders/hides a
+  // section does the app switch to computing the layout dynamically.
+  const DASH_SECTION_IDS = ['hero','pay','calendar','heatmap','achv','showmore'];
+  const DASH_SECTION_ELS = {
+    hero:'dash-hero-wrap', pay:'dash-pay-section', calendar:'dash-calendar-wrap',
+    heatmap:'dash-heatmap-card', achv:'dash-achv-card', showmore:'dash-showmore-wrap'
+  };
+  const DASH_SECTION_LABELS = {
+    hero:'Today / hero card', pay:'Payment status', calendar:'Calendar',
+    heatmap:'Income heatmap', achv:'Achievements', showmore:'Show more (insight, replay, recent, level)'
+  };
+  function defaultDashboardLayout(){
+    return DASH_SECTION_IDS.map(id=> ({ id, hidden:false }));
+  }
+
+  function dateKey(y,m,d){
+    return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  function todayKey(){
+    const t = new Date();
+    return dateKey(t.getFullYear(), t.getMonth(), t.getDate());
+  }
+  function daysBetween(fromKey, toKey){
+    const a = new Date(fromKey+'T00:00:00');
+    const b = new Date(toKey+'T00:00:00');
+    return Math.round((b-a) / 86400000);
+  }
+
+  // ---------- TABS ----------
+  function switchTab(tab){
+    document.querySelectorAll('nav.tabs button, .bottom-nav .bn-item').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('[data-tab="'+tab+'"]').forEach(b=>b.classList.add('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+tab).classList.add('active');
+    if(tab === 'dashboard') renderDashboard();
+    if(tab === 'calendar') renderCalendar();
+    if(tab === 'pending') renderPending();
+    if(tab === 'vision') renderVision();
+    if(tab === 'clients') renderClients();
+    if(tab === 'analytics') renderAnalytics();
+    if(tab === 'settings') renderSettings();
+    closeMorePopover();
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll('nav.tabs button').forEach(btn=>{
+    btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
+  });
+
+  // ---------- MOBILE BOTTOM NAV + FAB ----------
+  document.querySelectorAll('.bottom-nav .bn-item[data-tab]').forEach(btn=>{
+    btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
+  });
+  function closeMorePopover(){
+    const pop = document.getElementById('bn-more-popover');
+    if(pop) pop.classList.remove('open');
+  }
+  const bnMoreBtn = document.getElementById('bn-more-btn');
+  if(bnMoreBtn){
+    bnMoreBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      document.getElementById('bn-more-popover').classList.toggle('open');
+    });
+  }
+  document.addEventListener('click', (e)=>{
+    const pop = document.getElementById('bn-more-popover');
+    if(pop && pop.classList.contains('open') && !pop.contains(e.target) && e.target !== bnMoreBtn){
+      closeMorePopover();
+    }
+  });
+  document.querySelectorAll('.bn-more-popover button[data-tab]').forEach(btn=>{
+    btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
+  });
+  const bnFab = document.getElementById('bn-fab');
+  if(bnFab){
+    bnFab.addEventListener('click', ()=> openDayModal(todayKey()));
+  }
+
+  // ---------- CALENDAR FILTER (Earned / Paid / Both) ----------
+  function setCalFilter(f){
+    calFilter = f;
+    document.querySelectorAll('.cal-filter button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.filter === f);
+    });
+    renderCalendar();
+  }
+  document.querySelectorAll('#cal-filter-mini button, #cal-filter-large button').forEach(btn=>{
+    btn.addEventListener('click', ()=> setCalFilter(btn.dataset.filter));
+  });
+
+  // ---------- CALENDAR ----------
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // Earned/paid totals for a calendar month — "earned" is grouped by the entry's
+  // storage key (Date Earned); "paid" here sums whatever portion of those same
+  // earned-in-this-month entries has been collected, not money that happened to
+  // arrive this month for work earned elsewhere. See monthPaidReceived() below for
+  // "money that actually landed this month" (used by the Paid dashboard metric).
+  function monthTotal(y,m){
+    let earned = 0, paid = 0, daysLogged = 0;
+    Object.keys(data.entries).forEach(k=>{
+      const [ky,km] = k.split('-').map(Number);
+      if(ky===y && (km-1)===m){
+        const arr = data.entries[k];
+        if(arr && arr.length){
+          daysLogged++;
+          arr.forEach(e=>{
+            earned += earnedAmount(e);
+            paid += paidAmountOf(e);
+          });
+        }
+      }
+    });
+    return {earned, paid, outstanding: Math.max(0, earned-paid), daysLogged};
+  }
+  function yearTotal(y){
+    let earned = 0, paid = 0;
+    Object.keys(data.entries).forEach(k=>{
+      const ky = Number(k.split('-')[0]);
+      if(ky===y){
+        (data.entries[k]||[]).forEach(e=>{
+          earned += earnedAmount(e);
+          paid += paidAmountOf(e);
+        });
+      }
+    });
+    return {earned, paid, outstanding: Math.max(0, earned-paid)};
+  }
+  function weekBounds(d){
+    const start = new Date(d); start.setHours(0,0,0,0);
+    start.setDate(start.getDate() - start.getDay()); // back up to Sunday
+    const end = new Date(start); end.setDate(start.getDate()+6);
+    return {start, end};
+  }
+  function weekTotalEarned(refDate){
+    const {start, end} = weekBounds(refDate);
+    let total = 0;
+    const cursor = new Date(start);
+    while(cursor <= end){
+      total += earnedTotalForDay(dateKey(cursor.getFullYear(), cursor.getMonth(), cursor.getDate()));
+      cursor.setDate(cursor.getDate()+1);
+    }
+    return total;
+  }
+
+  // ---------- AGGREGATE / INDEX HELPERS ----------
+  // Earned income for one calendar day = everything stored under that day's key
+  // (its Date Earned), regardless of payment status. This is what the calendar,
+  // goals, streaks, and gamification all key off of.
+  function earnedTotalForDay(key){
+    return (data.entries[key]||[]).reduce((s,e)=> s + earnedAmount(e), 0);
+  }
+  // Money actually *received* on a given calendar day — grouped by paidDate, which
+  // can differ from the earned-date key the entry lives under. This powers the
+  // "Paid" calendar filter and the Paid dashboard metrics; it never moves the entry.
+  function buildPaidByDateIndex(){
+    const idx = {};
+    Object.keys(data.entries).forEach(k=>{
+      (data.entries[k]||[]).forEach(e=>{
+        const amt = paidAmountOf(e);
+        if(amt>0 && e.paidDate) idx[e.paidDate] = (idx[e.paidDate]||0) + amt;
+      });
+    });
+    return idx;
+  }
+  function paidTotalForDate(key, paidIdx){
+    return (paidIdx || buildPaidByDateIndex())[key] || 0;
+  }
+  function monthPaidReceived(y, m, paidIdx){
+    const idx = paidIdx || buildPaidByDateIndex();
+    const prefix = `${y}-${String(m+1).padStart(2,'0')}`;
+    return Object.keys(idx).filter(k=>k.startsWith(prefix)).reduce((s,k)=> s+idx[k], 0);
+  }
+  // Lifetime figures used by the dashboard's Outstanding/Overdue cards and Analytics tab.
+  function lifetimeTotals(){
+    let earned = 0, paid = 0, outstanding = 0, overdueAmt = 0, overdueCount = 0;
+    const tKey = todayKey();
+    Object.values(data.entries).forEach(arr=> arr.forEach(e=>{
+      earned += earnedAmount(e);
+      paid += paidAmountOf(e);
+      outstanding += outstandingAmountOf(e);
+      if(isOverdue(e, tKey) && outstandingAmountOf(e) > 0){
+        overdueAmt += outstandingAmountOf(e);
+        overdueCount++;
+      }
+    }));
+    return {earned, paid, outstanding, overdueAmt, overdueCount};
+  }
+
+  // All-time single best earned day, used to award the "purple" record tier.
+  // Gamification runs on Earned income (req: users get credit for completing work,
+  // even if payment arrives later), so the record-day check is earned-based too.
+  function computeBestDayEarned(){
+    let max = 0, maxKey = null;
+    Object.keys(data.entries).forEach(key=>{
+      const earned = earnedTotalForDay(key);
+      if(earned > max){ max = earned; maxKey = key; }
+    });
+    return {max, maxKey};
+  }
+
+  // paceHit = is this day caught up on the running monthly pace (dailyGoal x day-of-month)?
+  // That's what "green"/"red" mean now — goal achieved (or not) even if the money wasn't
+  // earned that exact day, as long as the running total is built up to where it should be.
+  // A zero-income day can still show green if an earlier surplus covers it, and can show
+  // red if the month has fallen behind — that's the point: it tracks the running build,
+  // not an isolated daily snapshot. Gold/purple stay tied to that day's own raw amount,
+  // since those celebrate a single standout day rather than pace. "inRange" gates this:
+  // only days from your first paid entry through today get pace-colored; anything before
+  // you started tracking, or in the future, just stays neutral gray.
+  // Used for the Earned and Both filters — gamified pace/record coloring, driven by
+  // earned income for the day rather than what's been collected.
+  function dayTier(paidPortion, total, dailyGoal, isRecord, paceHit, inRange){
+    if(total > 0 && paidPortion <= 0) return 'blue';
+    if(isRecord) return 'purple';
+    if(dailyGoal <= 0) return total > 0 ? 'green' : 'gray';
+    if(paidPortion >= dailyGoal*2) return 'gold';
+    if(total <= 0 && !inRange) return 'gray';
+    return paceHit ? 'green' : 'red';
+  }
+  // Used for the Paid filter — a plain same-day comparison against the daily goal,
+  // since pace/streak concepts are defined around Earned income, not scattered
+  // payment-arrival dates.
+  function dayTierPaid(paidAmt, dailyGoal){
+    if(paidAmt <= 0) return 'gray';
+    if(dailyGoal <= 0) return 'green';
+    if(paidAmt >= dailyGoal*2) return 'gold';
+    return paidAmt >= dailyGoal ? 'green' : 'red';
+  }
+
+  // Builds one month's cells into whichever grid element is passed in — used for
+  // both the compact dashboard calendar and the large expanded-view modal, which
+  // always share the same viewDate/month and the same Earned/Paid/Both filter.
+  function buildCalendarGrid(grid){
+    if(!grid) return;
+    const y = viewDate.getFullYear(), m = viewDate.getMonth();
+    grid.innerHTML = '';
+
+    const firstDay = new Date(y,m,1).getDay();
+    const daysInMonth = new Date(y,m+1,0).getDate();
+    const dailyGoal = data.settings.dailyGoal;
+    const tKey = todayKey();
+    const {maxKey: bestDayKey, max: bestDayAmt} = computeBestDayEarned();
+    const earnedKeysSorted = Object.keys(data.entries).filter(k => earnedTotalForDay(k) > 0).sort();
+    const firstEarnedKey = earnedKeysSorted.length ? earnedKeysSorted[0] : null;
+    const paidIdx = buildPaidByDateIndex();
+
+    for(let i=0;i<firstDay;i++){
+      const empty = document.createElement('div');
+      empty.className = 'day-cell empty';
+      grid.appendChild(empty);
+    }
+
+    for(let d=1; d<=daysInMonth; d++){
+      const key = dateKey(y,m,d);
+      const entries = data.entries[key] || [];
+      const earnedTotalDay = earnedTotalForDay(key);
+      const paidPortionDay = entries.reduce((s,e)=> s + paidAmountOf(e), 0);
+      const paidReceivedDay = paidTotalForDate(key, paidIdx);
+      const hasPending = entries.some(e=> !isSettled(e));
+
+      let tier, primaryAmt, showBoth = false, earnedForDisplay = 0, paidForDisplay = 0;
+      if(calFilter === 'paid'){
+        tier = dayTierPaid(paidReceivedDay, dailyGoal);
+        primaryAmt = paidReceivedDay;
+      } else {
+        const isRecord = bestDayAmt > 0 && key === bestDayKey;
+        // Vacuously "true" only means this month hasn't started tracking yet — that
+        // should render as behind/neutral, not a false green for an untouched month.
+        const paceHit = monthlyPaceTarget(key) !== null && monthlyPaceHit(key);
+        const inRange = !!firstEarnedKey && key >= firstEarnedKey && key <= tKey;
+        tier = dayTier(paidPortionDay, earnedTotalDay, dailyGoal, isRecord, paceHit, inRange);
+        primaryAmt = earnedTotalDay;
+        if(calFilter === 'both'){ showBoth = true; earnedForDisplay = earnedTotalDay; paidForDisplay = paidReceivedDay; }
+      }
+
+      const cell = document.createElement('div');
+      cell.className = 'day-cell tier-' + tier;
+      if(key === tKey) cell.classList.add('is-today');
+
+      const num = document.createElement('div');
+      num.className = 'num';
+      num.textContent = d;
+      cell.appendChild(num);
+
+      const hasAnythingToShow = calFilter === 'paid' ? paidReceivedDay > 0 : (entries.length > 0 || (showBoth && paidForDisplay>0));
+      if(hasAnythingToShow){
+        const dot = document.createElement('div');
+        dot.className = 'dot tier-' + tier;
+        cell.appendChild(dot);
+
+        if(showBoth){
+          const wrap = document.createElement('div');
+          wrap.className = 'amt-both';
+          if(earnedForDisplay>0){
+            const el = document.createElement('div');
+            el.className = 'amt-earned';
+            el.innerHTML = 'E: ' + fmt(earnedForDisplay) + (hasPending ? ' ⏳' : '');
+            wrap.appendChild(el);
+          }
+          if(paidForDisplay>0){
+            const el = document.createElement('div');
+            el.className = 'amt-paid';
+            el.textContent = 'P: ' + fmt(paidForDisplay);
+            wrap.appendChild(el);
+          }
+          cell.appendChild(wrap);
+        } else {
+          const amt = document.createElement('div');
+          amt.className = 'amt';
+          const pendingIcon = (calFilter === 'earned' && hasPending) ? ' ⏳' : '';
+          amt.innerHTML = fmt(primaryAmt) + pendingIcon;
+          cell.appendChild(amt);
+        }
+      }
+
+      cell.addEventListener('click', ()=> openDayModal(key));
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderCalendar(){
+    const y = viewDate.getFullYear(), m = viewDate.getMonth();
+    const label = `${monthNames[m]} ${y}`;
+    document.getElementById('month-label').textContent = label;
+    const largeLabel = document.getElementById('month-label-large');
+    if(largeLabel) largeLabel.textContent = label;
+
+    buildCalendarGrid(document.getElementById('cal-grid'));
+    buildCalendarGrid(document.getElementById('cal-grid-large'));
+    renderDealList('deal-list-mini');
+  }
+
+  // ---------- LIST VIEW (deal log, alternative to the mini calendar grid) ----------
+  function setCalendarMode(mode){
+    calendarViewMode = mode;
+    document.querySelectorAll('#cal-mode-toggle-mini button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+    const gridWrap = document.getElementById('cal-grid-wrap-mini');
+    const listWrap = document.getElementById('deal-list-mini');
+    const swipeHint = document.getElementById('swipe-hint-mini');
+    const dashBody = document.getElementById('dash-body');
+    if(gridWrap) gridWrap.style.display = mode === 'list' ? 'none' : 'block';
+    if(listWrap) listWrap.style.display = mode === 'list' ? 'flex' : 'none';
+    if(swipeHint) swipeHint.style.display = mode === 'list' ? 'none' : '';
+    if(dashBody) dashBody.classList.toggle('list-active', mode === 'list');
+    if(mode === 'list') renderDealList('deal-list-mini');
+    applyDashboardLayout();
+  }
+
+  // Computes and applies a custom dashboard order/visibility on top of the built-in
+  // stylesheet layout. Does nothing (leaves the stylesheet's own grid-template-areas in
+  // full control) when the user hasn't customized anything — so the default look for
+  // everyone who never opens "Customize dashboard" is byte-for-byte unchanged.
+  function applyDashboardLayout(){
+    const dashBody = document.getElementById('dash-body');
+    if(!dashBody) return;
+    const layout = data.settings.dashboardLayout;
+
+    DASH_SECTION_IDS.forEach(id=>{
+      const el = document.getElementById(DASH_SECTION_ELS[id]);
+      if(el) el.classList.remove('dash-hidden');
+    });
+
+    if(!layout){
+      dashBody.style.gridTemplateAreas = '';
+      dashBody.style.gridTemplateColumns = '';
+      return;
+    }
+
+    // Hide/show applies regardless of list mode — a section a user hid stays hidden
+    // even if List style would otherwise have shown it.
+    layout.forEach(item=>{
+      if(item.hidden && item.id !== 'hero'){
+        const el = document.getElementById(DASH_SECTION_ELS[item.id]);
+        if(el) el.classList.add('dash-hidden');
+      }
+    });
+
+    const isListActive = dashBody.classList.contains('list-active');
+    if(isListActive){
+      // List style owns its own fixed positions (calendar right above payment status);
+      // let its stylesheet rule drive placement, we've only touched visibility above.
+      dashBody.style.gridTemplateAreas = '';
+      dashBody.style.gridTemplateColumns = '';
+      return;
+    }
+
+    const visible = layout.filter(item=> item.id === 'hero' || !item.hidden).map(item=> item.id);
+    const isDesktop = !!(window.matchMedia && window.matchMedia('(min-width:1000px)').matches);
+    if(!visible.length){
+      dashBody.style.gridTemplateAreas = '';
+      dashBody.style.gridTemplateColumns = '';
+      return;
+    }
+    if(!isDesktop || visible.length === 1){
+      dashBody.style.gridTemplateColumns = 'minmax(0,1fr)';
+      dashBody.style.gridTemplateAreas = visible.map(id=> `"${id}"`).join(' ');
+    } else {
+      // Two-column desktop split: first half of the user's order fills the left column
+      // top-to-bottom, the rest fills the right column — reads like a newspaper.
+      const half = Math.ceil(visible.length/2);
+      const col1 = visible.slice(0, half), col2 = visible.slice(half);
+      const rows = Math.max(col1.length, col2.length);
+      const lines = [];
+      for(let r=0;r<rows;r++) lines.push(`"${col1[r]||'.'} ${col2[r]||'.'}"`);
+      dashBody.style.gridTemplateColumns = 'minmax(0,1.3fr) minmax(0,1fr)';
+      dashBody.style.gridTemplateAreas = lines.join(' ');
+    }
+  }
+  let dashLayoutResizeTimer = null;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(dashLayoutResizeTimer);
+    dashLayoutResizeTimer = setTimeout(applyDashboardLayout, 150);
+  });
+
+  document.querySelectorAll('#cal-mode-toggle-mini button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      calendarModeTouched = true;
+      setCalendarMode(btn.dataset.mode);
+    });
+  });
+
+  // Flat, newest-first log of the current month's entries — for people who think in
+  // terms of a running list of deals rather than a calendar grid. Reuses the same
+  // viewDate (month) and calFilter (Earned/Paid/Both) state as the grid, so switching
+  // modes doesn't lose your place.
+  function renderDealList(elementId){
+    const el = document.getElementById(elementId);
+    if(!el) return;
+    const y = viewDate.getFullYear(), m = viewDate.getMonth();
+    const monthPrefix = `${y}-${String(m+1).padStart(2,'0')}`;
+    const tKey = todayKey();
+    const rows = [];
+    Object.keys(data.entries).forEach(key=>{
+      if(!key.startsWith(monthPrefix)) return;
+      (data.entries[key]||[]).forEach(e=>{
+        if(calFilter === 'paid' && !(e.status==='paid' || e.status==='partial')) return;
+        rows.push({key, ...e});
+      });
+    });
+    rows.sort((a,b)=> b.key.localeCompare(a.key) || (b.id||'').localeCompare(a.id||''));
+    if(!rows.length){
+      el.innerHTML = `<div class="deal-list-empty">No income logged for ${monthNames[m]} yet.</div>`;
+      return;
+    }
+    el.innerHTML = rows.map(r=>{
+      const niceDate = new Date(r.key+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      const status = r.status || 'pending';
+      const settled = isSettled(r);
+      const overdue = isOverdue(r, tKey);
+      const tier = overdue ? 'tier-red' : (status==='paid' ? 'tier-green' : (settled ? 'tier-gray' : 'tier-blue'));
+      const amount = calFilter === 'paid' ? paidAmountOf(r) : earnedAmount(r);
+      const statusText = status==='paid' ? `paid ${r.paidDate ? new Date(r.paidDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : ''}` : (STATUS_LABELS[status]||status).toLowerCase();
+      return `<div class="deal-row">
+        <div class="deal-bar ${tier}"></div>
+        <div class="deal-main">
+          <div class="deal-client">${escapeHtml(r.client || 'Uncategorized')}</div>
+          <div class="deal-date">${niceDate} · ${statusText}</div>
+        </div>
+        <div class="deal-amt">${fmt2(amount)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('prev-month').addEventListener('click', ()=>{
+    viewDate.setMonth(viewDate.getMonth()-1);
+    renderCalendar();
+  });
+  document.getElementById('next-month').addEventListener('click', ()=>{
+    viewDate.setMonth(viewDate.getMonth()+1);
+    renderCalendar();
+  });
+  document.getElementById('today-btn').addEventListener('click', ()=>{
+    viewDate = new Date();
+    viewDate.setDate(1);
+    renderCalendar();
+  });
+  document.getElementById('prev-month-large').addEventListener('click', ()=>{
+    viewDate.setMonth(viewDate.getMonth()-1);
+    renderCalendar();
+  });
+  document.getElementById('next-month-large').addEventListener('click', ()=>{
+    viewDate.setMonth(viewDate.getMonth()+1);
+    renderCalendar();
+  });
+  document.getElementById('today-btn-large').addEventListener('click', ()=>{
+    viewDate = new Date();
+    viewDate.setDate(1);
+    renderCalendar();
+  });
+
+  // ---------- DAY MODAL ----------
+  function updateEntryFormConditionalFields(){
+    const status = document.getElementById('input-status').value;
+    const showPaidDate = status === 'paid' || status === 'partial';
+    const showPaidAmount = status === 'partial';
+    document.getElementById('paid-date-field').classList.toggle('show', showPaidDate);
+    document.getElementById('paid-amount-field').classList.toggle('show', showPaidAmount);
+    if(showPaidDate && !document.getElementById('input-paid-date').value){
+      document.getElementById('input-paid-date').value = todayKey();
+    }
+  }
+  document.getElementById('input-status').addEventListener('change', updateEntryFormConditionalFields);
+
+  function openDayModal(key){
+    selectedDateStr = key;
+    editingEntryIdx = null;
+    const [y,m,d] = key.split('-').map(Number);
+    const dateObj = new Date(y, m-1, d);
+    const niceDate = dateObj.toLocaleDateString('en-US',{weekday:'long', month:'long', day:'numeric', year:'numeric'});
+    document.getElementById('modal-date').textContent = niceDate;
+    document.getElementById('modal-goal-line').textContent = `Daily earned goal: ${fmt(data.settings.dailyGoal)}`;
+
+    resetEntryForm();
+    renderEntryList();
+
+    document.getElementById('day-overlay').classList.add('active');
+  }
+
+  // Puts the entry form back into "add a new entry" mode — used on open, after a
+  // successful add/save, and when Cancel is clicked out of an edit.
+  function resetEntryForm(){
+    editingEntryIdx = null;
+    document.getElementById('entry-form').reset();
+    document.getElementById('input-status').value = 'pending';
+    document.getElementById('input-paid-date').value = todayKey();
+    updateEntryFormConditionalFields();
+    document.getElementById('entry-form-submit').textContent = 'Add entry';
+    document.getElementById('entry-form-cancel').style.display = 'none';
+  }
+
+  // Loads an existing entry's fields into the form so it can be edited in place
+  // instead of deleted and re-typed from scratch.
+  function startEditEntry(idx){
+    const entry = data.entries[selectedDateStr][idx];
+    if(!entry) return;
+    editingEntryIdx = idx;
+    document.getElementById('input-amount').value = entry.amount;
+    document.getElementById('input-client').value = entry.client || '';
+    document.getElementById('input-category').value = entry.category || '';
+    document.getElementById('input-note').value = entry.note || '';
+    document.getElementById('input-status').value = entry.status || 'pending';
+    document.getElementById('input-expected-date').value = entry.expectedPaymentDate || '';
+    document.getElementById('input-paid-date').value = entry.paidDate || todayKey();
+    document.getElementById('input-paid-amount').value = entry.paidAmount || '';
+    updateEntryFormConditionalFields();
+    document.getElementById('entry-form-submit').textContent = 'Save changes';
+    document.getElementById('entry-form-cancel').style.display = 'block';
+    renderEntryList();
+    const formEl = document.getElementById('entry-form');
+    if(formEl.scrollIntoView) formEl.scrollIntoView({block:'nearest'});
+  }
+  document.getElementById('entry-form-cancel').addEventListener('click', resetEntryForm);
+  function closeModal(){
+    document.getElementById('day-overlay').classList.remove('active');
+    selectedDateStr = null;
+    editingEntryIdx = null;
+    renderCalendar();
+    renderDashboard();
+  }
+  document.getElementById('close-modal').addEventListener('click', closeModal);
+  document.getElementById('day-overlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'day-overlay') closeModal();
+  });
+
+  function renderEntryList(){
+    const list = document.getElementById('entry-list');
+    list.innerHTML = '';
+    const entries = data.entries[selectedDateStr] || [];
+    let earnedTotal = 0, paidTotal = 0;
+
+    if(!entries.length){
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:13px;color:var(--text-soft);padding:6px 0 4px;';
+      empty.textContent = 'No income earned on this day yet.';
+      list.appendChild(empty);
+    }
+
+    const statusOptions = Object.keys(STATUS_LABELS).map(k=> `<option value="${k}">${STATUS_LABELS[k]}</option>`).join('');
+
+    entries.forEach((e, idx)=>{
+      earnedTotal += earnedAmount(e);
+      paidTotal += paidAmountOf(e);
+      const status = e.status || 'pending';
+      const item = document.createElement('div');
+      item.className = 'entry-item' + (editingEntryIdx === idx ? ' editing' : '');
+      item.innerHTML = `
+        <div>
+          <div class="e-amt">${fmt2(e.amount)}</div>
+          ${e.client ? `<div class="e-client">${escapeHtml(e.client)}</div>` : ''}
+          ${e.category ? `<div class="e-note">${escapeHtml(e.category)}</div>` : ''}
+          ${e.note ? `<div class="e-note">${escapeHtml(e.note)}</div>` : ''}
+          <div style="margin-top:6px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+            <span class="status-pill ${status}">${STATUS_LABELS[status] || status}</span>
+            ${status === 'partial' ? `<span style="font-size:11px;color:var(--text-soft);">${fmt2(e.paidAmount||0)} received</span>` : ''}
+            ${(status==='paid'||status==='partial') && e.paidDate ? `<span style="font-size:11px;color:var(--text-soft);">paid ${new Date(e.paidDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>` : ''}
+            ${e.expectedPaymentDate && status!=='paid' && status!=='cancelled' ? `<span style="font-size:11px;color:var(--text-soft);">due ${new Date(e.expectedPaymentDate+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>` : ''}
+          </div>
+        </div>
+        <div class="e-actions">
+          <select class="status-select" data-idx="${idx}">${statusOptions}</select>
+          <button class="edit" data-idx="${idx}">Edit</button>
+          <button class="del" data-idx="${idx}">Remove</button>
+        </div>
+      `;
+      item.querySelector('.status-select').value = status;
+      list.appendChild(item);
+    });
+
+    document.getElementById('modal-day-total').textContent = `Earned so far: ${fmt2(earnedTotal)} · Paid so far: ${fmt2(paidTotal)}`;
+
+    list.querySelectorAll('.edit').forEach(btn=>{
+      btn.addEventListener('click', ()=> startEditEntry(Number(btn.dataset.idx)));
+    });
+    list.querySelectorAll('.del').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const idx = Number(btn.dataset.idx);
+        // Keep the form's editingEntryIdx pointing at the right entry (or cancel the
+        // edit outright if the entry being edited is the one that just got removed).
+        if(editingEntryIdx !== null){
+          if(idx === editingEntryIdx) resetEntryForm();
+          else if(idx < editingEntryIdx) editingEntryIdx--;
+        }
+        data.entries[selectedDateStr].splice(idx,1);
+        if(data.entries[selectedDateStr].length===0) delete data.entries[selectedDateStr];
+        save();
+        renderEntryList();
+      });
+    });
+    list.querySelectorAll('.status-select').forEach(sel=>{
+      sel.addEventListener('change', ()=>{
+        const idx = Number(sel.dataset.idx);
+        const entry = data.entries[selectedDateStr][idx];
+        const newStatus = sel.value;
+        if(newStatus === 'paid'){
+          entry.paidDate = entry.paidDate || todayKey();
+          entry.paidAmount = Number(entry.amount)||0;
+        } else if(newStatus === 'partial'){
+          const suggested = entry.paidAmount || 0;
+          const input = prompt('Amount received so far ($):', suggested || '');
+          const amt = parseFloat(input);
+          entry.paidAmount = isNaN(amt) ? suggested : Math.max(0, Math.min(amt, Number(entry.amount)||0));
+          entry.paidDate = entry.paidDate || todayKey();
+        } else {
+          entry.paidDate = null;
+          entry.paidAmount = 0;
+        }
+        entry.status = newStatus;
+        save();
+        renderEntryList();
+      });
+    });
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  document.getElementById('entry-form').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const amount = parseFloat(document.getElementById('input-amount').value);
+    const client = document.getElementById('input-client').value.trim();
+    const category = document.getElementById('input-category').value;
+    const note = document.getElementById('input-note').value.trim();
+    const status = document.getElementById('input-status').value;
+    const expectedPaymentDate = document.getElementById('input-expected-date').value || null;
+    const paidDateInput = document.getElementById('input-paid-date').value;
+    const paidAmountInput = parseFloat(document.getElementById('input-paid-amount').value);
+    if(isNaN(amount) || amount < 0) return;
+
+    let paidDate = null, paidAmount = 0;
+    if(status === 'paid'){
+      paidDate = paidDateInput || todayKey();
+      paidAmount = amount;
+    } else if(status === 'partial'){
+      paidDate = paidDateInput || todayKey();
+      paidAmount = isNaN(paidAmountInput) ? 0 : Math.max(0, Math.min(paidAmountInput, amount));
+    }
+
+    if(!data.entries[selectedDateStr]) data.entries[selectedDateStr] = [];
+    // Storage key = Date Earned. We never move an entry to its Paid Date — status
+    // and paidDate are just fields on the entry, the earned date stays put.
+    if(editingEntryIdx !== null && data.entries[selectedDateStr][editingEntryIdx]){
+      // Editing an existing entry in place — keep its id, overwrite everything else.
+      const existing = data.entries[selectedDateStr][editingEntryIdx];
+      Object.assign(existing, { amount, client, category, note, status, expectedPaymentDate, paidDate, paidAmount });
+    } else {
+      data.entries[selectedDateStr].push({
+        id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+        amount, client, category, note,
+        status, expectedPaymentDate,
+        paidDate, paidAmount
+      });
+    }
+    save();
+    resetEntryForm();
+    renderEntryList();
+  });
+
+  // ---------- INVOICES (search + filter across all statuses, incl. paid) ----------
+  // Shared by the table render and the CSV export so both always show the same set.
+  function getFilteredInvoiceRows(){
+    const tKey = todayKey();
+    const search = (document.getElementById('inv-search')?.value || '').toLowerCase().trim();
+    const statusFilter = document.getElementById('inv-status-filter')?.value || 'outstanding';
+
+    const rows = [];
+    Object.keys(data.entries).forEach(key=>{
+      (data.entries[key]||[]).forEach((e, idx)=>{
+        rows.push({ key, idx, ...e });
+      });
+    });
+
+    let filtered = rows.filter(r=>{
+      if(statusFilter === 'outstanding') return !isSettled(r);
+      if(statusFilter === 'overdue') return !isSettled(r) && isOverdue(r, tKey);
+      if(statusFilter === 'all') return true;
+      return (r.status || 'pending') === statusFilter;
+    });
+
+    if(search){
+      filtered = filtered.filter(r=>
+        (r.client||'').toLowerCase().includes(search)
+        || (r.category||'').toLowerCase().includes(search)
+        || (r.note||'').toLowerCase().includes(search)
+      );
+    }
+
+    // Paid view: most recently paid first. Everything else: oldest earned first.
+    filtered.sort((a,b)=> statusFilter === 'paid'
+      ? (b.paidDate||'').localeCompare(a.paidDate||'')
+      : a.key.localeCompare(b.key));
+
+    return { filtered, statusFilter, search, tKey };
+  }
+
+  function renderPending(){
+    const { filtered, statusFilter, search, tKey } = getFilteredInvoiceRows();
+    const totalFn = statusFilter === 'paid' ? paidAmountOf : outstandingAmountOf;
+    const total = filtered.reduce((s,r)=> s + totalFn(r), 0);
+    const labels = {
+      outstanding: 'Outstanding (earned, not yet fully paid)',
+      all: 'Total across all statuses',
+      pending: 'Pending', invoiced: 'Invoiced', partial: 'Partially paid',
+      overdue: 'Overdue', paid: 'Paid', cancelled: 'Cancelled'
+    };
+    document.getElementById('stat-pending-label').textContent = labels[statusFilter] || labels.outstanding;
+    document.getElementById('stat-pending-total').textContent = fmt(total);
+    document.getElementById('stat-pending-count').textContent =
+      `${filtered.length} entr${filtered.length===1?'y':'ies'}` +
+      (statusFilter === 'paid' ? ' paid' : statusFilter === 'all' ? ' total' : ' matching');
+
+    const wrap = document.getElementById('pending-table-wrap');
+    if(!filtered.length){
+      const heading = search ? 'No matches' : (statusFilter === 'paid' ? 'No paid invoices yet' : 'Nothing here');
+      const sub = search ? 'No invoices match your search.'
+        : statusFilter === 'paid' ? "You haven't marked any invoices paid yet."
+        : statusFilter === 'all' ? 'No invoices yet.'
+        : "Everything you've earned has been paid or cancelled.";
+      wrap.innerHTML = `
+        <div class="empty-state">
+          <div class="big"><span class="emoji-white">${search ? '🔍' : '✅'}</span></div>
+          <div><strong>${heading}</strong></div>
+          <div style="font-size:13px;margin-top:4px;">${sub}</div>
+        </div>
+      `;
+      updatePendingBadge();
+      return;
+    }
+
+    let html = `<table><thead><tr>
+      <th>Earned</th><th>Client</th><th>Category</th><th>Amount</th><th>Status</th><th>Detail</th><th></th>
+    </tr></thead><tbody>`;
+    filtered.forEach((r)=>{
+      const niceDate = new Date(r.key+'T00:00:00').toLocaleDateString('en-US',{month:'short', day:'numeric', year:'numeric'});
+      const status = r.status || 'pending';
+      const settled = isSettled(r);
+      const overdue = !settled && isOverdue(r, tKey);
+      const daysOut = daysBetween(r.key, tKey);
+
+      let detail;
+      if(status === 'paid'){
+        detail = r.paidDate ? `Paid ${new Date(r.paidDate+'T00:00:00').toLocaleDateString('en-US',{month:'short', day:'numeric'})}` : 'Paid';
+      } else if(status === 'cancelled'){
+        detail = 'Cancelled';
+      } else {
+        detail = overdue ? `${daysOut}d overdue` : `${daysOut}d out`;
+      }
+
+      let actionCell;
+      if(settled){
+        actionCell = `<button class="btn btn-secondary undo-status-btn" data-key="${r.key}" data-idx="${r.idx}" style="padding:7px 12px;font-size:12px;white-space:nowrap;">Undo</button>`;
+      } else {
+        actionCell = `
+          <input type="date" class="pending-paid-date" data-key="${r.key}" data-idx="${r.idx}" value="${tKey}" style="padding:6px 8px;font-size:13px;">
+          <button class="btn btn-primary mark-paid-btn" data-key="${r.key}" data-idx="${r.idx}" style="padding:7px 12px;font-size:12px;white-space:nowrap;margin-left:6px;">Mark paid</button>
+        `;
+      }
+
+      html += `<tr${overdue ? ' style="background:#fdeceb;"' : ''}>
+        <td>${niceDate}</td>
+        <td>${escapeHtml(r.client || 'Uncategorized')}${r.note ? `<div style="font-size:12px;color:var(--text-soft);">${escapeHtml(r.note)}</div>` : ''}</td>
+        <td>${escapeHtml(r.category || '—')}</td>
+        <td>${fmt2(r.amount)}${status==='partial' ? `<div style="font-size:11px;color:var(--text-soft);">${fmt2(r.paidAmount||0)} received</div>` : ''}</td>
+        <td><span class="status-pill ${overdue ? 'overdue' : status}">${overdue ? 'Overdue' : (STATUS_LABELS[status]||status)}</span></td>
+        <td>${detail}</td>
+        <td>${actionCell}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+
+    wrap.querySelectorAll('.mark-paid-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.key;
+        const idx = Number(btn.dataset.idx);
+        const dateInput = wrap.querySelector(`.pending-paid-date[data-key="${key}"][data-idx="${idx}"]`);
+        const entry = data.entries[key][idx];
+        entry.status = 'paid';
+        entry.paidDate = dateInput.value || todayKey();
+        entry.paidAmount = Number(entry.amount)||0;
+        save();
+        renderPending();
+      });
+    });
+    wrap.querySelectorAll('.undo-status-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.key;
+        const idx = Number(btn.dataset.idx);
+        const entry = data.entries[key][idx];
+        entry.status = 'pending';
+        entry.paidDate = null;
+        entry.paidAmount = 0;
+        save();
+        renderPending();
+      });
+    });
+
+    updatePendingBadge();
+  }
+  document.getElementById('inv-search').addEventListener('input', renderPending);
+  document.getElementById('inv-status-filter').addEventListener('change', renderPending);
+
+  function csvField(val){
+    const s = String(val==null ? '' : val);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  }
+  document.getElementById('inv-export-btn').addEventListener('click', ()=>{
+    const { filtered, statusFilter } = getFilteredInvoiceRows();
+    if(!filtered.length){
+      showToast('No invoices to export');
+      return;
+    }
+    const header = ['Date earned','Client','Category','Note','Amount','Status','Expected payment date','Paid date','Paid amount'];
+    const lines = [header.map(csvField).join(',')];
+    filtered.forEach(r=>{
+      lines.push([
+        r.key, r.client||'', r.category||'', r.note||'',
+        (Number(r.amount)||0).toFixed(2),
+        STATUS_LABELS[r.status||'pending'] || r.status || 'Pending',
+        r.expectedPaymentDate || '',
+        r.paidDate || '',
+        r.paidAmount ? Number(r.paidAmount).toFixed(2) : ''
+      ].map(csvField).join(','));
+    });
+    const blob = new Blob([lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `daybook-invoices-${statusFilter}-${todayKey()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV exported');
+  });
+
+  function updatePendingBadge(){
+    let count = 0;
+    Object.values(data.entries).forEach(arr=> arr.forEach(e=>{ if(!isSettled(e)) count++; }));
+    ['pending-badge','pending-badge-mobile'].forEach(id=>{
+      const badge = document.getElementById(id);
+      if(!badge) return;
+      if(count > 0){
+        badge.textContent = count;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    });
+  }
+
+  // ---------- VISION BOARD ----------
+  let visionEditingId = null; // id of goal being edited, or null when adding a new one
+  let visionFocusIdx = 0;
+
+  function genId(){ return Date.now() + '-' + Math.random().toString(36).slice(2,7); }
+
+  // Resize + compress an uploaded photo before it goes anywhere near localStorage —
+  // uncompressed phone photos would blow the storage quota after just a few goals.
+  function readAndResizeImage(file, maxDim, quality){
+    maxDim = maxDim || 900; quality = quality || 0.82;
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = ()=>{
+          let { width, height } = img;
+          if(width > maxDim || height > maxDim){
+            if(width > height){ height = Math.round(height * maxDim / width); width = maxDim; }
+            else { width = Math.round(width * maxDim / height); height = maxDim; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = ()=> reject(new Error('Could not read that image'));
+        img.src = reader.result;
+      };
+      reader.onerror = ()=> reject(new Error('Could not read that file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Money actually received (paid, or the paid portion of a partial) since the goal
+  // was created — the automatic "progress" behind each goal's dollar target.
+  function visionProgressPaid(goal){
+    let sum = 0;
+    Object.values(data.entries).forEach(arr=>{
+      arr.forEach(e=>{
+        if((e.status === 'paid' || e.status === 'partial') && e.paidDate && e.paidDate >= goal.createdAt){
+          sum += paidAmountOf(e);
+        }
+      });
+    });
+    return sum;
+  }
+
+  function renderVision(){
+    const grid = document.getElementById('vision-grid');
+    const goals = data.visionGoals || [];
+    let html = '';
+    goals.forEach(g=>{
+      const mediaStyle = g.image ? `style="background-image:url('${g.image}');"` : '';
+      const mediaInner = g.image ? '' : `<span class="vc-placeholder-icon">🎯</span>`;
+      let progressHtml = '';
+      if(g.hasTarget && g.targetAmount > 0){
+        const paid = visionProgressPaid(g);
+        const pct = Math.max(0, Math.min(100, Math.round((paid / g.targetAmount) * 100)));
+        progressHtml = `
+          <div class="vision-progress-track"><div class="vision-progress-fill" style="width:${pct}%;"></div></div>
+          <div class="vision-progress-label">${fmt(paid)} of ${fmt(g.targetAmount)} · ${pct}%</div>
+        `;
+      } else if(g.note){
+        progressHtml = `<div class="vision-card-note">${escapeHtml(g.note)}</div>`;
+      }
+      html += `
+        <div class="vision-card" data-id="${g.id}">
+          <div class="vision-card-media ${g.image ? '' : 'no-image'}" ${mediaStyle}>
+            ${mediaInner}
+            <div class="vision-card-actions">
+              <button class="vc-edit" data-id="${g.id}" title="Edit">✎</button>
+              <button class="vc-delete" data-id="${g.id}" title="Delete">✕</button>
+            </div>
+          </div>
+          <div class="vision-card-body">
+            <div class="vision-card-title">${escapeHtml(g.title || 'Untitled goal')}</div>
+            ${progressHtml}
+          </div>
+        </div>
+      `;
+    });
+    html += `
+      <div class="vision-add-card" id="vision-add-card">
+        <span class="plus">+</span>
+        <span>Add a goal</span>
+      </div>
+    `;
+    grid.innerHTML = html;
+
+    grid.querySelectorAll('.vision-card').forEach(card=>{
+      card.addEventListener('click', (e)=>{
+        if(e.target.closest('.vc-edit') || e.target.closest('.vc-delete')) return;
+        openVisionFocus(card.dataset.id);
+      });
+    });
+    grid.querySelectorAll('.vc-edit').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{ e.stopPropagation(); openVisionForm(btn.dataset.id); });
+    });
+    grid.querySelectorAll('.vc-delete').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(!confirm('Delete this goal? This cannot be undone.')) return;
+        data.visionGoals = data.visionGoals.filter(g=> g.id !== btn.dataset.id);
+        save();
+        renderVision();
+      });
+    });
+    const addCard = document.getElementById('vision-add-card');
+    if(addCard) addCard.addEventListener('click', ()=> openVisionForm(null));
+  }
+
+  // ---- Add / edit form ----
+  function openVisionForm(id){
+    visionEditingId = id;
+    const overlay = document.getElementById('vision-form-overlay');
+    const form = document.getElementById('vision-form');
+    form.reset();
+    document.getElementById('vf-image-preview').innerHTML = '';
+    document.getElementById('vf-target-field').classList.remove('show');
+    const deleteBtn = document.getElementById('vision-form-delete');
+
+    if(id){
+      const g = (data.visionGoals || []).find(x=> x.id === id);
+      document.getElementById('vision-form-title').textContent = 'Edit goal';
+      document.getElementById('vf-input-title').value = g.title || '';
+      document.getElementById('vf-input-note').value = g.note || '';
+      document.getElementById('vf-input-has-target').checked = !!g.hasTarget;
+      document.getElementById('vf-input-target').value = g.targetAmount || '';
+      document.getElementById('vf-target-field').classList.toggle('show', !!g.hasTarget);
+      if(g.image){
+        document.getElementById('vf-image-preview').innerHTML = `<img src="${g.image}" alt="">`;
+      }
+      deleteBtn.style.display = 'inline-block';
+    } else {
+      document.getElementById('vision-form-title').textContent = 'Add a goal';
+      deleteBtn.style.display = 'none';
+    }
+    overlay.classList.add('active');
+  }
+  function closeVisionForm(){
+    document.getElementById('vision-form-overlay').classList.remove('active');
+    visionEditingId = null;
+  }
+  document.getElementById('vision-add-btn').addEventListener('click', ()=> openVisionForm(null));
+  document.getElementById('vision-form-close').addEventListener('click', closeVisionForm);
+  document.getElementById('vision-form-overlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'vision-form-overlay') closeVisionForm();
+  });
+  document.getElementById('vf-input-has-target').addEventListener('change', (e)=>{
+    document.getElementById('vf-target-field').classList.toggle('show', e.target.checked);
+  });
+
+  let pendingVisionImage = undefined; // undefined = unchanged, null = cleared, string = new image
+  document.getElementById('vf-input-image').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    try{
+      const dataUrl = await readAndResizeImage(file);
+      pendingVisionImage = dataUrl;
+      document.getElementById('vf-image-preview').innerHTML = `<img src="${dataUrl}" alt="">`;
+    }catch(err){
+      showToast("Couldn't read that photo");
+    }
+  });
+
+  document.getElementById('vision-form').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const title = document.getElementById('vf-input-title').value.trim();
+    if(!title){ showToast('Give the goal a title'); return; }
+    const hasTarget = document.getElementById('vf-input-has-target').checked;
+    const targetAmount = hasTarget ? Math.max(0, parseFloat(document.getElementById('vf-input-target').value) || 0) : 0;
+    const note = document.getElementById('vf-input-note').value.trim();
+
+    if(!data.visionGoals) data.visionGoals = [];
+    if(visionEditingId){
+      const g = data.visionGoals.find(x=> x.id === visionEditingId);
+      if(g){
+        Object.assign(g, { title, hasTarget, targetAmount, note });
+        if(pendingVisionImage !== undefined) g.image = pendingVisionImage;
+      }
+    } else {
+      data.visionGoals.push({
+        id: genId(), title, note, hasTarget, targetAmount,
+        image: pendingVisionImage || null,
+        createdAt: todayKey()
+      });
+    }
+    pendingVisionImage = undefined;
+    save();
+    closeVisionForm();
+    renderVision();
+  });
+  document.getElementById('vision-form-delete').addEventListener('click', ()=>{
+    if(!visionEditingId) return;
+    if(!confirm('Delete this goal? This cannot be undone.')) return;
+    data.visionGoals = (data.visionGoals || []).filter(g=> g.id !== visionEditingId);
+    save();
+    closeVisionForm();
+    renderVision();
+  });
+
+  // ---- Focus mode ----
+  function openVisionFocus(startId){
+    const goals = data.visionGoals || [];
+    if(!goals.length){ showToast('Add a goal first'); return; }
+    const idx = startId ? goals.findIndex(g=> g.id === startId) : 0;
+    visionFocusIdx = idx >= 0 ? idx : 0;
+    renderVisionFocusStage();
+    document.getElementById('vision-focus-overlay').classList.add('active');
+  }
+  function closeVisionFocus(){
+    document.getElementById('vision-focus-overlay').classList.remove('active');
+  }
+  function renderVisionFocusStage(){
+    const goals = data.visionGoals || [];
+    if(!goals.length){ closeVisionFocus(); return; }
+    if(visionFocusIdx >= goals.length) visionFocusIdx = 0;
+    if(visionFocusIdx < 0) visionFocusIdx = goals.length - 1;
+    const g = goals[visionFocusIdx];
+
+    const media = g.image
+      ? `<img class="vf-image" src="${g.image}" alt="">`
+      : `<div class="vf-image-placeholder">🎯</div>`;
+
+    let progressHtml = '';
+    if(g.hasTarget && g.targetAmount > 0){
+      const paid = visionProgressPaid(g);
+      const pct = Math.max(0, Math.min(100, Math.round((paid / g.targetAmount) * 100)));
+      progressHtml = `
+        <div class="vf-progress-wrap">
+          <div class="vf-progress-track"><div class="vf-progress-fill" style="width:${pct}%;"></div></div>
+          <div class="vf-progress-label">${fmt(paid)} of ${fmt(g.targetAmount)} · ${pct}% there</div>
+        </div>
+      `;
+    }
+
+    document.getElementById('vision-focus-stage').innerHTML = `
+      ${media}
+      <div class="vf-title">${escapeHtml(g.title || 'Untitled goal')}</div>
+      ${g.note ? `<div class="vf-note">${escapeHtml(g.note)}</div>` : ''}
+      ${progressHtml}
+    `;
+
+    const dotsWrap = document.getElementById('vision-focus-dots');
+    dotsWrap.innerHTML = goals.map((_, i)=>
+      `<button class="${i===visionFocusIdx?'active':''}" data-idx="${i}" aria-label="Goal ${i+1}"></button>`
+    ).join('');
+    dotsWrap.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ visionFocusIdx = Number(btn.dataset.idx); renderVisionFocusStage(); });
+    });
+
+    const multi = goals.length > 1;
+    document.getElementById('vision-focus-prev').style.display = multi ? 'flex' : 'none';
+    document.getElementById('vision-focus-next').style.display = multi ? 'flex' : 'none';
+  }
+  document.getElementById('vision-focus-btn').addEventListener('click', ()=> openVisionFocus(null));
+  document.getElementById('vision-focus-close').addEventListener('click', closeVisionFocus);
+  document.getElementById('vision-focus-overlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'vision-focus-overlay') closeVisionFocus();
+  });
+  document.getElementById('vision-focus-prev').addEventListener('click', ()=>{
+    visionFocusIdx -= 1; renderVisionFocusStage();
+  });
+  document.getElementById('vision-focus-next').addEventListener('click', ()=>{
+    visionFocusIdx += 1; renderVisionFocusStage();
+  });
+  document.addEventListener('keydown', (e)=>{
+    const overlay = document.getElementById('vision-focus-overlay');
+    if(!overlay.classList.contains('active')) return;
+    if(e.key === 'Escape') closeVisionFocus();
+    if(e.key === 'ArrowLeft'){ visionFocusIdx -= 1; renderVisionFocusStage(); }
+    if(e.key === 'ArrowRight'){ visionFocusIdx += 1; renderVisionFocusStage(); }
+  });
+
+  // ---------- CLIENTS ----------
+  function renderClients(){
+    const search = (document.getElementById('client-search').value || '').toLowerCase();
+    const map = {};
+    Object.values(data.entries).forEach(arr=>{
+      arr.forEach(e=>{
+        const name = (e.client && e.client.trim()) ? e.client.trim() : 'Uncategorized';
+        if(!map[name]) map[name] = { total:0, paid:0, outstanding:0, count:0, last:null };
+        map[name].total += earnedAmount(e);
+        map[name].paid += paidAmountOf(e);
+        map[name].outstanding += outstandingAmountOf(e);
+        map[name].count += 1;
+      });
+    });
+    Object.keys(data.entries).forEach(key=>{
+      (data.entries[key]||[]).forEach(e=>{
+        const name = (e.client && e.client.trim()) ? e.client.trim() : 'Uncategorized';
+        if(!map[name].last || key > map[name].last) map[name].last = key;
+      });
+    });
+
+    let rows = Object.entries(map)
+      .map(([name, v])=>({name, ...v}))
+      .filter(r => r.name.toLowerCase().includes(search))
+      .sort((a,b)=> b.total - a.total);
+
+    const wrap = document.getElementById('clients-table-wrap');
+
+    if(!rows.length){
+      wrap.innerHTML = `
+        <div class="empty-state">
+          <div class="big"><span class="emoji-white">🗂️</span></div>
+          <div><strong>No clients yet</strong></div>
+          <div style="font-size:13px;margin-top:4px;">Log income on the calendar and name a client to see them ranked here.</div>
+        </div>
+      `;
+      return;
+    }
+
+    let html = `<table><thead><tr>
+      <th>Client / Vendor</th><th>Earned total</th><th>Paid</th><th>Outstanding</th><th># Payments</th><th>Last activity</th>
+    </tr></thead><tbody>`;
+    rows.forEach((r, i)=>{
+      const lastDate = r.last ? new Date(r.last+'T00:00:00').toLocaleDateString('en-US',{month:'short', day:'numeric', year:'numeric'}) : '—';
+      html += `<tr>
+        <td class="client-name"><span class="rank">${i+1}</span>${escapeHtml(r.name)}</td>
+        <td>${fmt2(r.total)}</td>
+        <td>${fmt2(r.paid)}</td>
+        <td>${r.outstanding>0 ? `<span style="color:var(--amber);font-weight:700;">${fmt2(r.outstanding)}</span>` : '—'}</td>
+        <td>${r.count}</td>
+        <td>${lastDate}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+  document.getElementById('client-search').addEventListener('input', renderClients);
+
+  // ---------- ANALYTICS ----------
+  function avgDaysToGetPaid(){
+    let totalDays = 0, count = 0;
+    Object.keys(data.entries).forEach(key=>{
+      (data.entries[key]||[]).forEach(e=>{
+        if(e.status === 'paid' && e.paidDate){
+          totalDays += Math.max(0, daysBetween(key, e.paidDate));
+          count++;
+        }
+      });
+    });
+    return count ? (totalDays/count) : null;
+  }
+
+  function monthlyEarnedVsPaid(monthsBack){
+    const paidIdx = buildPaidByDateIndex();
+    const months = [];
+    const base = new Date(); base.setDate(1);
+    for(let i=monthsBack-1; i>=0; i--){
+      const d = new Date(base.getFullYear(), base.getMonth()-i, 1);
+      months.push({y:d.getFullYear(), m:d.getMonth()});
+    }
+    return months.map(({y,m})=>{
+      const {earned} = monthTotal(y,m);
+      const paid = monthPaidReceived(y,m,paidIdx);
+      return { label: `${monthNames[m].slice(0,3)} ${String(y).slice(2)}`, earned, paid };
+    });
+  }
+
+  function renderAnalytics(){
+    const lifetime = lifetimeTotals();
+    document.getElementById('an-total-earned').textContent = fmt(lifetime.earned);
+    document.getElementById('an-total-paid').textContent = fmt(lifetime.paid);
+    document.getElementById('an-outstanding').textContent = fmt(lifetime.outstanding);
+    document.getElementById('an-collection-rate').textContent = lifetime.earned>0
+      ? `${Math.round((lifetime.paid/lifetime.earned)*100)}%` : '0%';
+    const avgDays = avgDaysToGetPaid();
+    document.getElementById('an-avg-days').textContent = avgDays===null ? '—' : `${avgDays.toFixed(1)} days`;
+    document.getElementById('an-overdue-count').textContent = lifetime.overdueCount;
+    document.getElementById('an-overdue-amount').textContent = `${fmt(lifetime.overdueAmt)} outstanding`;
+
+    // Monthly earned vs paid comparison — last 12 months.
+    const months = monthlyEarnedVsPaid(12);
+    const maxVal = months.reduce((mx,r)=> Math.max(mx, r.earned, r.paid), 0) || 1;
+    const chartEl = document.getElementById('an-bar-chart');
+    chartEl.innerHTML = months.map(r=>{
+      const eH = Math.round((r.earned/maxVal)*140);
+      const pH = Math.round((r.paid/maxVal)*140);
+      return `<div class="bar-chart-month">
+        <div class="bar-chart-bars">
+          <div class="bar-chart-bar earned" style="height:${Math.max(2,eH)}px;" title="Earned ${fmt(r.earned)}"></div>
+          <div class="bar-chart-bar paid" style="height:${Math.max(2,pH)}px;" title="Paid ${fmt(r.paid)}"></div>
+        </div>
+        <div class="bar-chart-label">${r.label}</div>
+      </div>`;
+    }).join('');
+
+    // Earned by category
+    const catMap = {};
+    Object.values(data.entries).forEach(arr=> arr.forEach(e=>{
+      const cat = (e.category && e.category.trim()) ? e.category.trim() : 'Uncategorized';
+      catMap[cat] = (catMap[cat]||0) + earnedAmount(e);
+    }));
+    const catRows = Object.entries(catMap).filter(([,v])=>v>0).sort((a,b)=> b[1]-a[1]);
+    const catWrap = document.getElementById('an-category-wrap');
+    if(!catRows.length){
+      catWrap.innerHTML = `<div style="font-size:13px;color:var(--text-soft);">No categorized income yet.</div>`;
+    } else {
+      const catMax = catRows[0][1] || 1;
+      catWrap.innerHTML = catRows.map(([name, amt])=> `
+        <div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:4px;">
+            <span>${escapeHtml(name)}</span><span>${fmt(amt)}</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:${Math.round((amt/catMax)*100)}%"></div></div>
+        </div>
+      `).join('');
+    }
+  }
+
+  // ---------- SETTINGS ----------
+  function renderSettings(){
+    document.getElementById('input-daily-goal').value = data.settings.dailyGoal;
+    document.getElementById('input-working-days').value = data.settings.workingDays;
+    document.getElementById('input-display-name').value = data.settings.displayName || '';
+    updateComputed();
+    updateDashStyleOptionsUI();
+    updateWorkdayToggleUI();
+    renderCustomizeList();
+  }
+  function renderCustomizeList(){
+    const el = document.getElementById('dash-customize-list');
+    if(!el) return;
+    const layout = data.settings.dashboardLayout || defaultDashboardLayout();
+    el.innerHTML = layout.map((item, i)=>{
+      const isHero = item.id === 'hero';
+      return `<div class="dc-row ${item.hidden ? 'dc-hidden-row' : ''}" data-id="${item.id}">
+        <span class="dc-label">${DASH_SECTION_LABELS[item.id] || item.id}</span>
+        <div class="dc-actions">
+          <button type="button" class="dc-btn" data-act="up" ${i===0 ? 'disabled' : ''} aria-label="Move up">▲</button>
+          <button type="button" class="dc-btn" data-act="down" ${i===layout.length-1 ? 'disabled' : ''} aria-label="Move down">▼</button>
+          <button type="button" class="dc-btn ${item.hidden ? '' : 'dc-eye-active'}" data-act="toggle" ${isHero ? 'disabled title="Always shown"' : ''}>${item.hidden ? 'Show' : 'Hide'}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  const dashCustomizeListEl = document.getElementById('dash-customize-list');
+  if(dashCustomizeListEl){
+    dashCustomizeListEl.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.dc-btn');
+      if(!btn || btn.disabled) return;
+      const row = e.target.closest('.dc-row');
+      if(!row) return;
+      const id = row.dataset.id;
+      const layout = (data.settings.dashboardLayout || defaultDashboardLayout()).slice();
+      const idx = layout.findIndex(item=> item.id === id);
+      if(idx === -1) return;
+      const act = btn.dataset.act;
+      if(act === 'up' && idx > 0){
+        [layout[idx-1], layout[idx]] = [layout[idx], layout[idx-1]];
+      } else if(act === 'down' && idx < layout.length-1){
+        [layout[idx+1], layout[idx]] = [layout[idx], layout[idx+1]];
+      } else if(act === 'toggle' && id !== 'hero'){
+        layout[idx] = { ...layout[idx], hidden: !layout[idx].hidden };
+      } else {
+        return;
+      }
+      data.settings.dashboardLayout = layout;
+      save();
+      renderCustomizeList();
+      applyDashboardLayout();
+    });
+  }
+  const dashCustomizeResetBtn = document.getElementById('dash-customize-reset');
+  if(dashCustomizeResetBtn){
+    dashCustomizeResetBtn.addEventListener('click', ()=>{
+      data.settings.dashboardLayout = null;
+      save();
+      renderCustomizeList();
+      applyDashboardLayout();
+    });
+  }
+  function updateWorkdayToggleUI(){
+    document.querySelectorAll('#workday-toggle button').forEach(btn=>{
+      btn.classList.toggle('active', data.settings.workDays.includes(Number(btn.dataset.day)));
+    });
+  }
+  document.querySelectorAll('#workday-toggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const day = Number(btn.dataset.day);
+      const set = new Set(data.settings.workDays);
+      if(set.has(day)){
+        if(set.size === 1) return; // always keep at least one work day active
+        set.delete(day);
+      } else {
+        set.add(day);
+      }
+      data.settings.workDays = Array.from(set).sort();
+      save();
+      updateWorkdayToggleUI();
+      renderDashboard();
+    });
+  });
+  function updateDashStyleOptionsUI(){
+    document.querySelectorAll('.dash-style-option').forEach(opt=>{
+      const isActive = opt.dataset.style === data.settings.dashboardStyle;
+      opt.classList.toggle('active', isActive);
+      opt.querySelector('input[type="radio"]').checked = isActive;
+    });
+  }
+  document.querySelectorAll('.dash-style-option').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      const style = opt.dataset.style;
+      if(data.settings.dashboardStyle === style) return;
+      data.settings.dashboardStyle = style;
+      calendarModeTouched = false;
+      save();
+      updateDashStyleOptionsUI();
+      renderDashboard();
+    });
+  });
+  // Weekly goal is derived the same way monthly/yearly already were: daily goal x
+  // however many working days fall in a week on average (annualized then /52, so it
+  // stays consistent with the monthly/yearly figures instead of assuming a flat 5-day week).
+  function computeWeeklyGoal(dailyGoal, workingDays){
+    return dailyGoal * (workingDays*12/52);
+  }
+  function updateComputed(){
+    const dg = parseFloat(document.getElementById('input-daily-goal').value) || 0;
+    const wd = parseFloat(document.getElementById('input-working-days').value) || 0;
+    document.getElementById('computed-weekly').textContent = fmt(computeWeeklyGoal(dg, wd));
+    document.getElementById('computed-monthly').textContent = fmt(dg*wd);
+    document.getElementById('computed-yearly').textContent = fmt(dg*wd*12);
+    document.getElementById('computed-working-days-year').textContent = (wd*12).toString();
+  }
+  document.getElementById('input-daily-goal').addEventListener('input', updateComputed);
+  document.getElementById('input-working-days').addEventListener('input', updateComputed);
+
+  document.getElementById('save-settings').addEventListener('click', ()=>{
+    const dg = parseFloat(document.getElementById('input-daily-goal').value);
+    const wd = parseFloat(document.getElementById('input-working-days').value);
+    data.settings.dailyGoal = isNaN(dg) ? 0 : dg;
+    data.settings.workingDays = isNaN(wd) ? 0 : wd;
+    data.settings.displayName = document.getElementById('input-display-name').value.trim();
+    save();
+    renderCalendar();
+    renderDashboard();
+  });
+
+  document.getElementById('export-data').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `daybook-backup-${todayKey()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    recordBackupTime();
+    renderBackupBanner();
+  });
+
+  document.getElementById('import-data-btn').addEventListener('click', ()=>{
+    document.getElementById('import-file').click();
+  });
+  document.getElementById('import-file').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt)=>{
+      try{
+        const parsed = JSON.parse(evt.target.result);
+        if(parsed && parsed.settings && parsed.entries){
+          data = parsed;
+          save();
+          renderCalendar();
+          renderClients();
+          renderSettings();
+          renderBackupBanner();
+          showToast('Backup imported');
+        } else {
+          alert('That file does not look like a valid Daybook backup.');
+        }
+      }catch(err){
+        alert('Could not read that file.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  document.getElementById('clear-data').addEventListener('click', ()=>{
+    if(confirm('This will permanently delete all logged income and reset your goal. Continue?')){
+      data = defaultData();
+      save();
+      renderCalendar();
+      renderClients();
+      renderSettings();
+      renderDashboard();
+    }
+  });
+
+  // ---------- DAILY QUOTE ----------
+  // 365 original Daybook-voice quotes, built from three phrase banks and combined
+  // deterministically by day-of-year — a different line every day, all year.
+  const QUOTE_A = [
+    'Discipline today.','Show up today.','Earn it today.','Grind today.','Focus today.','Hustle today.',
+    'Push today.','Create today.','Build today.','Invest today.','Move today.','Work today.',
+    'Commit today.','Execute today.','Persist today.','Rise today.','Act today.','Start today.','Win today.'
+  ];
+  const QUOTE_B = [
+    'freedom tomorrow.','options tomorrow.','peace tomorrow.','growth tomorrow.','wealth tomorrow.',
+    'momentum tomorrow.','results tomorrow.','security tomorrow.','opportunity tomorrow.','ease tomorrow.',
+    'confidence tomorrow.','progress tomorrow.','leverage tomorrow.','stability tomorrow.','clarity tomorrow.',
+    'reward tomorrow.','compounding tomorrow.','traction tomorrow.','proof tomorrow.','independence tomorrow.'
+  ];
+  const QUOTE_C = [
+    'Legacy forever.','Impact forever.','Freedom forever.','Family forever.','Purpose forever.',
+    'Story forever.','Proof forever.','Vision forever.','Craft forever.','Name forever.',
+    'Standard forever.','Habit forever.','Discipline forever.','Reputation forever.','Foundation forever.',
+    'Momentum forever.','Character forever.','Legend forever.','Difference forever.'
+  ];
+  function dayOfYear(d){
+    const start = new Date(d.getFullYear(), 0, 0);
+    return Math.floor((d - start) / 86400000);
+  }
+  function dailyQuote(doy){
+    const a = QUOTE_A[doy % QUOTE_A.length];
+    const b = QUOTE_B[(doy*7) % QUOTE_B.length];
+    const c = QUOTE_C[(doy*13) % QUOTE_C.length];
+    return `${a} ${b} ${c}`;
+  }
+
+  // ---------- SIDEBAR ----------
+  function renderSidebar(){
+    const name = (data.settings.displayName || '').trim();
+    document.getElementById('sb-avatar').textContent = name ? name.trim()[0].toUpperCase() : 'D';
+    document.getElementById('sb-profile-name').textContent = name || 'Your name';
+
+    const lvl = levelInfo(lifetimeXP());
+    document.getElementById('sb-level-label').textContent = `Level ${lvl.level}`;
+    document.getElementById('sb-xp-text').textContent = `${fmt(lvl.xp)} XP`;
+    document.getElementById('sb-level-bar').style.width = lvl.progress + '%';
+    document.getElementById('sb-level-sub').textContent = lvl.xpToNext>0
+      ? `${fmt(lvl.xpToNext)} to Level ${lvl.level+1}`
+      : 'Max level reached';
+
+    document.getElementById('sb-quote-text').textContent = dailyQuote(dayOfYear(new Date()));
+  }
+
+  // ---------- DASHBOARD / STREAKS / XP / ACHIEVEMENTS ----------
+  // Gamification runs entirely on Earned income: users get credit for completing
+  // work — streaks, badges, level progress — the moment it's logged, whether or not
+  // payment has arrived yet. earnedTotalForDay() (defined above) is the source of truth.
+  let heatmapYear = new Date().getFullYear();
+
+  // The first day you actually earned income within a given month — pace counting
+  // starts there, not on the 1st of the month, so starting to use Daybook mid-month
+  // (or mid-month every month) never blames you for days before you were tracking.
+  function firstEarnedDayOfMonth(y, m0){
+    const prefix = `${y}-${String(m0+1).padStart(2,'0')}`;
+    const days = Object.keys(data.entries)
+      .filter(k => k.startsWith(prefix) && earnedTotalForDay(k) > 0)
+      .map(k => Number(k.split('-')[2]));
+    return days.length ? Math.min(...days) : null;
+  }
+
+  // The goal is a running target, not a fresh reset every 24 hours: a day counts as
+  // "hit" if your cumulative earned total since your first earned entry this month has
+  // caught up to (dailyGoal x tracked-days-so-far) — so a slow day is forgiven if
+  // you're ahead from a big day earlier on, and a big day banks progress toward a
+  // future one. Pace resets at the start of each calendar month (mirrors the monthly goal).
+  function monthlyPaceCumulative(key){
+    const [y,m,d] = key.split('-').map(Number);
+    let cumulative = 0;
+    for(let day=1; day<=d; day++){
+      cumulative += earnedTotalForDay(dateKey(y, m-1, day));
+    }
+    return cumulative;
+  }
+  function monthlyPaceHit(key){
+    const dailyGoal = data.settings.dailyGoal;
+    if(!dailyGoal || dailyGoal <= 0) return true;
+    const target = monthlyPaceTarget(key);
+    if(target === null) return true; // no tracked income yet this month — nothing to be behind on
+    return monthlyPaceCumulative(key) >= target;
+  }
+  // The $ target a day should have banked by, given the running pace. Returns null
+  // if no income has been tracked yet this month (nothing to compare against).
+  function monthlyPaceTarget(key){
+    const dailyGoal = data.settings.dailyGoal;
+    if(!dailyGoal || dailyGoal <= 0) return null;
+    const [y, mStr, dStr] = key.split('-');
+    const m0 = Number(mStr) - 1, d = Number(dStr);
+    const startDay = firstEarnedDayOfMonth(Number(y), m0);
+    if(startDay === null || d < startDay) return null;
+    const dayIndex = d - startDay + 1;
+    return dailyGoal * dayIndex;
+  }
+
+  // Current streak walks backward from today (with a one-day grace period, since
+  // "today" isn't over yet); best streak scans every pace-hit day since the first
+  // earned entry. "Hit" means on-pace cumulatively against Earned income.
+  function computeStreaks(){
+    const dailyGoal = data.settings.dailyGoal;
+    if(!dailyGoal || dailyGoal <= 0) return {current:0, best:0};
+
+    const earnedKeys = Object.keys(data.entries).filter(k => earnedTotalForDay(k) > 0).sort();
+    if(!earnedKeys.length) return {current:0, best:0};
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    const firstDate = new Date(earnedKeys[0] + 'T00:00:00');
+    if(firstDate > today) return {current:0, best:0};
+
+    // Only the days you've told us you work (Settings → "Which days do you work?")
+    // are evaluated at all — everything else is skipped entirely, so it can neither
+    // extend nor break the streak. A work day only counts as "hit" if that month has
+    // actually started tracking earned income — a zero-income gap month shouldn't
+    // vacuously keep a streak alive.
+    const workDays = (data.settings.workDays && data.settings.workDays.length) ? data.settings.workDays : [1,2,3,4,5];
+    const hits = [];
+    const cursor = new Date(firstDate);
+    while(cursor <= today){
+      if(workDays.includes(cursor.getDay())){
+        const key = dateKey(cursor.getFullYear(), cursor.getMonth(), cursor.getDate());
+        hits.push({ key, hit: monthlyPaceTarget(key) !== null && monthlyPaceHit(key) });
+      }
+      cursor.setDate(cursor.getDate()+1);
+    }
+
+    let best = 0, run = 0;
+    hits.forEach(h=>{
+      if(h.hit){ run++; best = Math.max(best, run); } else { run = 0; }
+    });
+
+    const todayKeyStr = todayKey();
+    let idx = hits.length - 1;
+    if(idx >= 0 && hits[idx].key === todayKeyStr && !hits[idx].hit) idx--; // grace: today not over yet
+    let current = 0;
+    while(idx >= 0 && hits[idx].hit){
+      current++;
+      idx--;
+    }
+    return {current, best};
+  }
+
+  function maxMonthEarned(){
+    const totals = {};
+    Object.keys(data.entries).forEach(key=>{
+      const mk = key.slice(0,7);
+      totals[mk] = (totals[mk]||0) + earnedTotalForDay(key);
+    });
+    return Object.values(totals).reduce((m,v)=> Math.max(m,v), 0);
+  }
+  function maxYearEarned(){
+    const totals = {};
+    Object.keys(data.entries).forEach(key=>{
+      const yk = key.slice(0,4);
+      totals[yk] = (totals[yk]||0) + earnedTotalForDay(key);
+    });
+    return Object.values(totals).reduce((m,v)=> Math.max(m,v), 0);
+  }
+
+  function lifetimeXP(){
+    let total = 0;
+    Object.values(data.entries).forEach(arr=> arr.forEach(e=>{ total += earnedAmount(e); }));
+    return Math.round(total);
+  }
+
+  // XP levels grow quadratically (each level costs more than the last) so leveling
+  // up stays meaningful as lifetime earnings climb.
+  const XP_BASE = 1000;
+  function xpThreshold(level){ return XP_BASE * (level-1) * level / 2; }
+  function levelInfo(xp){
+    let level = 1;
+    while(level < 500 && xpThreshold(level+1) <= xp) level++;
+    const cur = xpThreshold(level), next = xpThreshold(level+1);
+    const span = next - cur;
+    const progress = span > 0 ? Math.min(100, Math.round(((xp-cur)/span)*100)) : 100;
+    return {level, xp, progress, xpToNext: Math.max(0, Math.round(next-xp))};
+  }
+
+  // Distinct clients, whether any client has come back for a second job, and the
+  // single biggest client relationship by lifetime earnings.
+  function clientStats(){
+    const totals = {}, counts = {};
+    Object.values(data.entries).forEach(arr=> arr.forEach(e=>{
+      const name = (e.client||'').trim();
+      if(!name) return;
+      totals[name] = (totals[name]||0) + earnedAmount(e);
+      counts[name] = (counts[name]||0) + 1;
+    }));
+    const names = Object.keys(totals);
+    return {
+      distinctCount: names.length,
+      hasRepeat: names.some(n=> counts[n] >= 2),
+      biggestClientTotal: names.reduce((m,n)=> Math.max(m, totals[n]), 0),
+    };
+  }
+
+  // True if any month you've logged income in has since been fully collected —
+  // nothing left outstanding from that month's work.
+  function hasFullyCollectedMonth(){
+    const monthKeys = new Set(Object.keys(data.entries).map(k=> k.slice(0,7)));
+    for(const mk of monthKeys){
+      const [y,m] = mk.split('-').map(Number);
+      const {earned} = monthTotal(y, m-1);
+      if(earned <= 0) continue;
+      let outstanding = 0;
+      Object.keys(data.entries).forEach(key=>{
+        if(!key.startsWith(mk)) return;
+        (data.entries[key]||[]).forEach(e=>{ outstanding += outstandingAmountOf(e); });
+      });
+      if(outstanding <= 0) return true;
+    }
+    return false;
+  }
+
+  function getAchievements(){
+    const bestDay = computeBestDayEarned().max;
+    const bestMonth = maxMonthEarned();
+    const bestYear = maxYearEarned();
+    const lifetimeEarned = lifetimeXP();
+    const {best: bestStreak} = computeStreaks();
+    const clients = clientStats();
+    const avgDays = avgDaysToGetPaid();
+    const lifetime = lifetimeTotals();
+
+    return [
+      // ---- Money milestones ----
+      {id:'first-dollar', category:'money', icon:'💵', label:'First Dollar', unlocked: bestDay>0, current: bestDay>0?1:0, target:1, fmtAsMoney:false},
+      {id:'500-day', category:'money', icon:'⭐', label:'$500 Day', unlocked: bestDay>=500, current: bestDay, target:500, fmtAsMoney:true},
+      {id:'thousand-day', category:'money', icon:'🚀', label:'$1,000 Day', unlocked: bestDay>=1000, current: bestDay, target:1000, fmtAsMoney:true},
+      {id:'10k-month', category:'money', icon:'💎', label:'$10K Month', unlocked: bestMonth>=10000, current: bestMonth, target:10000, fmtAsMoney:true},
+      {id:'100k-year', category:'money', icon:'👑', label:'$100K Year', unlocked: bestYear>=100000, current: bestYear, target:100000, fmtAsMoney:true},
+      {id:'1m-lifetime', category:'money', icon:'🏆', label:'$1M Lifetime', unlocked: lifetimeEarned>=1000000, current: lifetimeEarned, target:1000000, fmtAsMoney:true},
+
+      // ---- Streaks ----
+      {id:'streak-7', category:'streaks', icon:'🔥', label:'7-Day Streak', unlocked: bestStreak>=7, current: bestStreak, target:7, fmtAsMoney:false},
+      {id:'streak-14', category:'streaks', icon:'🔥', label:'14-Day Streak', unlocked: bestStreak>=14, current: bestStreak, target:14, fmtAsMoney:false},
+      {id:'streak-30', category:'streaks', icon:'🔥', label:'30-Day Streak', unlocked: bestStreak>=30, current: bestStreak, target:30, fmtAsMoney:false},
+      {id:'streak-60', category:'streaks', icon:'🔥', label:'60-Day Streak', unlocked: bestStreak>=60, current: bestStreak, target:60, fmtAsMoney:false},
+      {id:'streak-100', category:'streaks', icon:'🔥', label:'100-Day Streak', unlocked: bestStreak>=100, current: bestStreak, target:100, fmtAsMoney:false},
+      {id:'streak-365', category:'streaks', icon:'🔥', label:'365-Day Streak', unlocked: bestStreak>=365, current: bestStreak, target:365, fmtAsMoney:false},
+
+      // ---- Clients ----
+      {id:'repeat-client', category:'clients', icon:'🔁', label:'Repeat Client', unlocked: clients.hasRepeat, current: clients.hasRepeat?1:0, target:1, fmtAsMoney:false},
+      {id:'clients-5', category:'clients', icon:'👥', label:'5 Clients', unlocked: clients.distinctCount>=5, current: clients.distinctCount, target:5, fmtAsMoney:false},
+      {id:'clients-10', category:'clients', icon:'👥', label:'10 Clients', unlocked: clients.distinctCount>=10, current: clients.distinctCount, target:10, fmtAsMoney:false},
+
+      // ---- Collections ----
+      {id:'fast-payer', category:'collections', icon:'⚡', label:'Fast Payer', unlocked: avgDays!==null && avgDays<=7, current: (avgDays!==null && avgDays<=7)?1:0, target:1, fmtAsMoney:false},
+      {id:'full-collect-month', category:'collections', icon:'✅', label:'Fully Collected Month', unlocked: hasFullyCollectedMonth(), current: hasFullyCollectedMonth()?1:0, target:1, fmtAsMoney:false},
+      {id:'clean-slate', category:'collections', icon:'🧼', label:'Clean Slate', unlocked: lifetime.earned>0 && lifetime.overdueCount===0, current: (lifetime.earned>0 && lifetime.overdueCount===0)?1:0, target:1, fmtAsMoney:false},
+    ];
+  }
+  const ACHV_CATEGORY_LABELS = { money:'Money', streaks:'Streaks', clients:'Clients', collections:'Collections' };
+
+  // Compares the current unlocked set against what's been shown before (persisted in
+  // settings.unlockedAchievements) and pops a toast for anything newly earned.
+  function checkNewAchievements(list){
+    const seen = new Set(data.settings.unlockedAchievements || []);
+    const freshlyUnlocked = list.filter(a=> a.unlocked && !seen.has(a.id));
+    if(freshlyUnlocked.length){
+      showAchievementCelebration(freshlyUnlocked[0]);
+      list.forEach(a=>{ if(a.unlocked) seen.add(a.id); });
+      data.settings.unlockedAchievements = Array.from(seen);
+      save();
+    }
+  }
+
+  // ---------- Achievement unlock celebration: confetti + modal ----------
+  const CONSISTENCY_QUOTES = [
+    "Consistency is what transforms average into excellence.",
+    "It's not what we do once in a while that shapes our lives, but what we do consistently.",
+    "Small daily wins compound into results no single day could ever produce.",
+    "Discipline is choosing between what you want now and what you want most.",
+    "Don't count the days — make the days count.",
+    "Motivation gets you going. Consistency keeps you growing.",
+    "Success isn't one big leap. It's the same small step, repeated.",
+    "Show up today. That's the whole secret, repeated daily.",
+    "You don't rise to the occasion — you fall to the level of your habits.",
+    "The secret of getting ahead is getting started, and staying at it."
+  ];
+  function randomConsistencyQuote(){
+    return CONSISTENCY_QUOTES[Math.floor(Math.random()*CONSISTENCY_QUOTES.length)];
+  }
+  function showAchievementCelebration(a){
+    const overlay = document.getElementById('achv-overlay');
+    if(!overlay) return;
+    const iconEl = document.getElementById('achv-celebrate-icon');
+    const labelEl = document.getElementById('achv-celebrate-label');
+    const quoteEl = document.getElementById('achv-celebrate-quote');
+    if(iconEl) iconEl.innerHTML = `<span class="emoji-white">${a.icon}</span>`;
+    if(labelEl) labelEl.textContent = a.label;
+    if(quoteEl) quoteEl.textContent = `"${randomConsistencyQuote()}"`;
+    overlay.classList.add('active');
+    fireConfetti();
+  }
+  function closeAchvCelebration(){
+    const overlay = document.getElementById('achv-overlay');
+    if(overlay) overlay.classList.remove('active');
+  }
+  const achvCelebrateClose = document.getElementById('achv-celebrate-close');
+  const achvCelebrateDone = document.getElementById('achv-celebrate-done');
+  const achvOverlayEl = document.getElementById('achv-overlay');
+  if(achvCelebrateClose) achvCelebrateClose.addEventListener('click', closeAchvCelebration);
+  if(achvCelebrateDone) achvCelebrateDone.addEventListener('click', closeAchvCelebration);
+  if(achvOverlayEl) achvOverlayEl.addEventListener('click', (e)=>{ if(e.target === achvOverlayEl) closeAchvCelebration(); });
+
+  // Lightweight canvas confetti burst — hand-rolled instead of pulling in an external
+  // library, so the app stays a single, fully offline-capable file. Fires a couple
+  // hundred particles that fall/rotate under simple gravity, then clears itself.
+  let confettiRAF = null;
+  function fireConfetti(){
+    if(typeof requestAnimationFrame !== 'function') return;
+    const canvas = document.getElementById('confetti-canvas');
+    if(!canvas || !canvas.getContext) return;
+    const ctx = canvas.getContext('2d');
+    if(!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = window.innerWidth, h = window.innerHeight;
+    canvas.width = w*dpr; canvas.height = h*dpr;
+    canvas.style.width = w+'px'; canvas.style.height = h+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    const colors = ['#16a34a','#2dd4bf','#3b82f6','#eab308','#f97316','#a855f7','#ec4899'];
+    const count = 140;
+    const particles = [];
+    for(let i=0;i<count;i++){
+      particles.push({
+        x: Math.random()*w,
+        y: -20 - Math.random()*h*0.4,
+        size: 6 + Math.random()*6,
+        color: colors[Math.floor(Math.random()*colors.length)],
+        vx: -1.5 + Math.random()*3,
+        vy: 2 + Math.random()*3,
+        rot: Math.random()*Math.PI*2,
+        vrot: -0.2 + Math.random()*0.4,
+        shape: Math.random() < 0.5 ? 'rect' : 'circle'
+      });
+    }
+    const startTime = Date.now();
+    const duration = 3200;
+    if(confettiRAF) cancelAnimationFrame(confettiRAF);
+    function frame(){
+      const elapsed = Date.now() - startTime;
+      ctx.clearRect(0,0,w,h);
+      particles.forEach(p=>{
+        p.x += p.vx; p.y += p.vy; p.rot += p.vrot; p.vy += 0.02;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        if(p.shape === 'rect'){
+          ctx.fillRect(-p.size/2, -p.size/3, p.size, p.size*0.66);
+        } else {
+          ctx.beginPath();
+          ctx.arc(0,0,p.size/2,0,Math.PI*2);
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+      if(elapsed < duration && particles.some(p=> p.y < h+30)){
+        confettiRAF = requestAnimationFrame(frame);
+      } else {
+        ctx.clearRect(0,0,w,h);
+        confettiRAF = null;
+      }
+    }
+    confettiRAF = requestAnimationFrame(frame);
+  }
+
+  function computeBestWeekday(){
+    const sums = [0,0,0,0,0,0,0], counts = [0,0,0,0,0,0,0];
+    Object.keys(data.entries).forEach(key=>{
+      const earned = earnedTotalForDay(key);
+      if(earned <= 0) return;
+      const dow = new Date(key+'T00:00:00').getDay();
+      sums[dow] += earned; counts[dow]++;
+    });
+    const avgs = sums.map((s,i)=> counts[i] ? s/counts[i] : 0);
+    const loggedAvgs = avgs.filter(a=>a>0);
+    if(loggedAvgs.length < 2) return null;
+    const overallAvg = loggedAvgs.reduce((a,b)=>a+b,0) / loggedAvgs.length;
+    let bestIdx = -1, bestAvg = 0;
+    avgs.forEach((a,i)=>{ if(a>bestAvg){ bestAvg=a; bestIdx=i; } });
+    if(bestIdx === -1 || overallAvg <= 0) return null;
+    const pctAbove = Math.round(((bestAvg-overallAvg)/overallAvg)*100);
+    const dayNames = ['Sundays','Mondays','Tuesdays','Wednesdays','Thursdays','Fridays','Saturdays'];
+    return { day: dayNames[bestIdx], pctAbove };
+  }
+
+  // Shared by the show-more "Recent activity" card and Simple mode's "View recent" panel.
+  function renderRecentListInto(elementId, limit){
+    const el = document.getElementById(elementId);
+    if(!el) return;
+    const rows = [];
+    Object.keys(data.entries).forEach(key=>{
+      (data.entries[key]||[]).forEach(e=> rows.push({key, ...e}));
+    });
+    rows.sort((a,b)=> b.key.localeCompare(a.key) || (b.id||'').localeCompare(a.id||''));
+    if(!rows.length){
+      el.innerHTML = `<div style="font-size:13px;color:var(--text-soft);">Go make today's first dollar.</div>`;
+    } else {
+      el.innerHTML = rows.slice(0,limit).map(r=>{
+        const niceDate = new Date(r.key+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        const status = r.status || 'pending';
+        const paid = status === 'paid';
+        return `<div class="recent-item">
+          <div>
+            <div class="r-client">${escapeHtml(r.client || 'Uncategorized')}</div>
+            <div class="r-date">${niceDate}${paid ? '' : ' · ' + (STATUS_LABELS[status]||status)}</div>
+          </div>
+          <div class="r-amt ${paid?'paid':'pending'}">${fmt2(r.amount)}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  function renderDashboard(){
+    const dateTextEl = document.getElementById('dash-date-text');
+    if(dateTextEl){
+      dateTextEl.textContent = new Date().toLocaleDateString('en-US',{weekday:'long', month:'long', day:'numeric'});
+    }
+
+    const hasAnyEntries = Object.keys(data.entries).some(k => (data.entries[k]||[]).length > 0);
+    const emptyHeroEl = document.getElementById('dash-empty-hero');
+    const heroCardEl = document.getElementById('dash-hero-card');
+    if(emptyHeroEl && heroCardEl){
+      emptyHeroEl.style.display = hasAnyEntries ? 'none' : 'block';
+      heroCardEl.style.display = hasAnyEntries ? 'block' : 'none';
+    }
+
+    const name = (data.settings.displayName || '').trim();
+    const hour = new Date().getHours();
+    const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    const waveIcon = '<span class="icon-chip"><span class="emoji-white">👋</span></span>';
+    document.getElementById('dash-greeting-text').innerHTML = name
+      ? `${timeGreeting}, ${escapeHtml(name)}! ${waveIcon}`
+      : `${timeGreeting}! ${waveIcon}`;
+
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth();
+    const {dailyGoal, workingDays} = data.settings;
+    const weeklyGoal = computeWeeklyGoal(dailyGoal, workingDays);
+    const monthlyGoal = dailyGoal * workingDays;
+    const yearlyGoal = monthlyGoal * 12;
+
+    const {earned: mEarned} = monthTotal(y,m);
+    const {earned: yEarned} = yearTotal(y);
+    const wEarned = weekTotalEarned(now);
+    const tKey = todayKey();
+    const todayEarned = earnedTotalForDay(tKey);
+    const todayEntries = data.entries[tKey] || [];
+    const todayOutstanding = todayEntries.reduce((s,e)=> s + outstandingAmountOf(e), 0);
+
+    // Pace: the goal is a running target, so "hit" means caught up cumulatively since
+    // your first EARNED entry this month, not that today alone cleared the daily goal.
+    // If nothing's been earned yet this month there's no pace to have caught up to —
+    // that should read as "not hit yet", not a free pass.
+    const rawPaceTarget = monthlyPaceTarget(tKey);
+    const trackingStartedThisMonth = rawPaceTarget !== null;
+    const paceCumToday = monthlyPaceCumulative(tKey);
+    const paceTargetToday = trackingStartedThisMonth ? rawPaceTarget : dailyGoal;
+    const todayPaceHit = trackingStartedThisMonth && monthlyPaceHit(tKey);
+
+    document.getElementById('dash-greeting-sub').textContent = todayPaceHit && dailyGoal>0
+      ? "You're on pace this month. Keep the streak alive!"
+      : "Let's crush today's goal.";
+
+    document.getElementById('dash-week-value').textContent = fmt(wEarned);
+    document.getElementById('dash-week-sub').textContent = `of ${fmt(weeklyGoal)} goal`;
+    document.getElementById('dash-week-bar').style.width = Math.min(100, weeklyGoal ? (wEarned/weeklyGoal*100) : 0) + '%';
+
+    document.getElementById('dash-month-value').textContent = fmt(mEarned);
+    document.getElementById('dash-month-sub').textContent = `of ${fmt(monthlyGoal)} goal`;
+    document.getElementById('dash-month-bar').style.width = Math.min(100, monthlyGoal ? (mEarned/monthlyGoal*100) : 0) + '%';
+
+    document.getElementById('dash-today-label').textContent = `Today (${now.toLocaleDateString('en-US',{month:'short',day:'numeric'})})`;
+    document.getElementById('dash-today-value').innerHTML = fmt(todayEarned) +
+      (dailyGoal>0 && todayPaceHit ? `<span class="badge-hit">Goal Hit! <span class="emoji-mono">🎉</span></span>` : '');
+    if(dailyGoal>0){
+      const paceShortfall = Math.max(0, paceTargetToday - paceCumToday);
+      const paceSurplus = Math.max(0, paceCumToday - paceTargetToday);
+      if(paceShortfall>0){
+        document.getElementById('dash-today-sub').textContent = `Only ${fmt(paceShortfall)} left to catch up to pace`;
+      } else if(paceSurplus>0){
+        document.getElementById('dash-today-sub').textContent = `On pace — ${fmt(paceSurplus)} ahead for the month`;
+      } else {
+        document.getElementById('dash-today-sub').textContent = `Daily goal: ${fmt(dailyGoal)}`;
+      }
+    } else {
+      document.getElementById('dash-today-sub').textContent = 'Set a daily goal in Settings to track progress.';
+    }
+    if(todayOutstanding>0){
+      document.getElementById('dash-today-sub').textContent += ` · +${fmt(todayOutstanding)} unpaid`;
+    }
+
+    // Today's Overview ring — fills based on running pace, not just today's raw earnings.
+    const todayPct = (dailyGoal>0 && paceTargetToday>0) ? Math.round((paceCumToday/paceTargetToday)*100) : (dailyGoal>0 ? 100 : 0);
+    const ringFillPct = Math.min(100, todayPct);
+    document.getElementById('today-ring').style.background =
+      `conic-gradient(var(--green) ${ringFillPct*3.6}deg, #eef0f3 0deg)`;
+    document.getElementById('today-ring-pct').textContent = `${Math.min(100, todayPct)}%`;
+    document.getElementById('overview-goal').textContent = fmt(dailyGoal);
+    document.getElementById('overview-earned').textContent = fmt(todayEarned);
+    if(dailyGoal>0 && paceCumToday >= paceTargetToday){
+      document.getElementById('overview-remaining-label').textContent = 'Ahead of pace';
+      document.getElementById('overview-remaining').textContent = fmt(paceCumToday - paceTargetToday);
+    } else {
+      document.getElementById('overview-remaining-label').textContent = 'Remaining to pace';
+      document.getElementById('overview-remaining').textContent = fmt(Math.max(0, paceTargetToday - paceCumToday));
+    }
+
+    const {current: streakCurrent, best: streakBest} = computeStreaks();
+    document.getElementById('dash-streak-value').innerHTML = `${streakCurrent} <span class="emoji-white">🔥</span>`;
+    document.getElementById('dash-streak-sub').textContent = `Best: ${streakBest} day${streakBest===1?'':'s'}`;
+
+    document.getElementById('dash-year-value').textContent = fmt(yEarned);
+    document.getElementById('dash-year-sub').textContent = `of ${fmt(yearlyGoal)} goal`;
+    document.getElementById('dash-year-bar').style.width = Math.min(100, yearlyGoal ? (yEarned/yearlyGoal*100) : 0) + '%';
+
+    // Payment-status metrics: Earned this month, Paid this month, Outstanding (lifetime
+    // AR balance), Overdue. Separate from the goal-tracking cards above — those reflect
+    // completed work, these reflect collections.
+    const paidIdxDash = buildPaidByDateIndex();
+    const paidThisMonth = monthPaidReceived(y, m, paidIdxDash);
+    const lifetime = lifetimeTotals();
+    document.getElementById('pay-earned-month').textContent = fmt(mEarned);
+    document.getElementById('pay-paid-month').textContent = fmt(paidThisMonth);
+    document.getElementById('pay-outstanding').textContent = fmt(lifetime.outstanding);
+    document.getElementById('pay-outstanding-sub').textContent = lifetime.earned>0
+      ? `${Math.round((lifetime.paid/lifetime.earned)*100)}% collected lifetime` : '';
+    document.getElementById('pay-overdue').textContent = fmt(lifetime.overdueAmt);
+    document.getElementById('pay-overdue-sub').textContent = `${lifetime.overdueCount} entr${lifetime.overdueCount===1?'y':'ies'} overdue`;
+
+    // Insight
+    const insight = computeBestWeekday();
+    const insightCard = document.getElementById('dash-insight-card');
+    if(insight && insight.pctAbove > 0){
+      insightCard.style.display = 'block';
+      document.getElementById('dash-insight-text').textContent =
+        `${insight.day} are your highest earning days. You earn ${insight.pctAbove}% more than your average on them.`;
+    } else {
+      insightCard.style.display = 'none';
+    }
+
+    // Recent activity (most recent entries across all days)
+    renderRecentListInto('dash-recent-list', 6);
+
+    // Achievements — grouped into categories (Money, Streaks, Clients, Collections)
+    const achvList = getAchievements();
+    const achvGrid = document.getElementById('achv-grid');
+    const achvBadgeHtml = (a)=>{
+      const pct = Math.min(100, Math.round((a.current/a.target)*100));
+      const progText = a.unlocked ? 'Done' : `${a.fmtAsMoney ? fmt(a.current) : a.current} / ${a.fmtAsMoney ? fmt(a.target) : a.target}`;
+      return `<div class="achv-badge ${a.unlocked?'unlocked':''}">
+        <div class="achv-icon"><span class="emoji-white">${a.icon}</span></div>
+        <div class="achv-label">${a.label}</div>
+        ${a.unlocked ? '<div style="font-size:10px;color:var(--green-dark);font-weight:700;">✓ Earned</div>' :
+          `<div class="achv-progress"><i style="width:${pct}%;"></i></div><div style="font-size:10px;color:var(--text-soft);">${progText}</div>`}
+      </div>`;
+    };
+    const categoryOrder = ['money','streaks','clients','collections'];
+    achvGrid.innerHTML = categoryOrder.map(cat=>{
+      const items = achvList.filter(a=> a.category === cat);
+      if(!items.length) return '';
+      return `<div>
+        <div class="achv-category-label">${ACHV_CATEGORY_LABELS[cat] || cat}</div>
+        <div class="achv-grid">${items.map(achvBadgeHtml).join('')}</div>
+      </div>`;
+    }).join('');
+    checkNewAchievements(achvList);
+
+    // XP / Level
+    const xp = lifetimeXP();
+    const lvl = levelInfo(xp);
+    document.getElementById('dash-level-value').textContent = `Level ${lvl.level}`;
+    document.getElementById('dash-xp-sub').textContent = `${fmt(xp)} lifetime earnings (XP)`;
+    document.getElementById('dash-level-bar').style.width = lvl.progress + '%';
+    document.getElementById('dash-level-remaining').textContent = lvl.xpToNext>0
+      ? `${fmt(lvl.xpToNext)} to Level ${lvl.level+1}`
+      : 'Max level reached';
+
+    document.getElementById('dash-replay-month').textContent = monthNames[viewDate.getMonth()] + ' ' + viewDate.getFullYear();
+
+    renderHeatmap(heatmapYear);
+    renderSidebar();
+
+    // ---------- Dashboard style: Simple / Standard / List ----------
+    const isSimple = data.settings.dashboardStyle === 'simple';
+    document.getElementById('dash-simple-view').style.display = isSimple ? 'block' : 'none';
+    document.getElementById('dash-body').style.display = isSimple ? 'none' : 'grid';
+    if(isSimple){
+      document.getElementById('simple-month-value').textContent = fmt(mEarned);
+      document.getElementById('simple-outstanding-value').textContent = fmt(lifetime.outstanding);
+    }
+    if(!calendarModeTouched) setCalendarMode(data.settings.dashboardStyle === 'list' ? 'list' : 'grid');
+    applyDashboardLayout();
+  }
+
+  document.getElementById('dash-add-income-btn').addEventListener('click', ()=> openDayModal(todayKey()));
+  document.getElementById('view-today-btn').addEventListener('click', ()=> openDayModal(todayKey()));
+  const dashEmptyAddBtn = document.getElementById('dash-empty-add-btn');
+  if(dashEmptyAddBtn) dashEmptyAddBtn.addEventListener('click', ()=> openDayModal(todayKey()));
+
+  // ---------- SIMPLE MODE ----------
+  const simpleAddBtn = document.getElementById('simple-add-btn');
+  if(simpleAddBtn) simpleAddBtn.addEventListener('click', ()=> openDayModal(todayKey()));
+  const simpleViewRecentBtn = document.getElementById('simple-view-recent-btn');
+  if(simpleViewRecentBtn){
+    simpleViewRecentBtn.addEventListener('click', ()=>{
+      const panel = document.getElementById('simple-recent');
+      const open = panel.style.display === 'block';
+      if(!open) renderRecentListInto('simple-recent', 10);
+      panel.style.display = open ? 'none' : 'block';
+      simpleViewRecentBtn.textContent = open ? 'View recent' : 'Hide recent';
+    });
+  }
+
+  // ---------- SHOW MORE (dashboard low-priority section) ----------
+  const showmoreBtn = document.getElementById('dash-showmore-btn');
+  if(showmoreBtn){
+    showmoreBtn.addEventListener('click', ()=>{
+      const content = document.getElementById('dash-showmore-content');
+      const open = content.style.display === 'block';
+      content.style.display = open ? 'none' : 'block';
+      showmoreBtn.textContent = open
+        ? 'Show more · insight, replay, recent activity, level'
+        : 'Show less';
+    });
+  }
+
+  // ---------- SWIPE TO CHANGE MONTH (mobile calendar) ----------
+  function attachSwipeNav(gridId, prevBtnId, nextBtnId){
+    const grid = document.getElementById(gridId);
+    if(!grid) return;
+    let touchStartX = null, touchStartY = null;
+    grid.addEventListener('touchstart', (e)=>{
+      if(e.touches.length !== 1) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, {passive:true});
+    grid.addEventListener('touchend', (e)=>{
+      if(touchStartX === null) return;
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - touchStartX;
+      const dy = touch.clientY - touchStartY;
+      touchStartX = null; touchStartY = null;
+      if(Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      const btnId = dx < 0 ? nextBtnId : prevBtnId;
+      const btn = document.getElementById(btnId);
+      if(btn) btn.click();
+    }, {passive:true});
+  }
+  attachSwipeNav('cal-grid', 'prev-month', 'next-month');
+  attachSwipeNav('cal-grid-large', 'prev-month-large', 'next-month-large');
+
+  // ---------- INCOME HEATMAP ----------
+  function renderHeatmap(year){
+    document.getElementById('heatmap-year-label').textContent = year;
+    const container = document.getElementById('heatmap-grid');
+    container.innerHTML = '';
+
+    const start = new Date(year,0,1);
+    const startDow = start.getDay();
+    const firstSunday = new Date(start);
+    firstSunday.setDate(start.getDate() - startDow);
+    const end = new Date(year,11,31);
+    const totalDays = Math.round((end - firstSunday)/86400000) + 1;
+    const weeks = Math.ceil(totalDays/7);
+    container.style.gridTemplateColumns = `repeat(${weeks}, 11px)`;
+
+    for(let i=0; i<weeks*7; i++){
+      const d = new Date(firstSunday);
+      d.setDate(firstSunday.getDate() + i);
+      const cellDiv = document.createElement('div');
+      if(d.getFullYear() !== year){
+        cellDiv.className = 'heat-cell heat-empty';
+      } else {
+        const key = dateKey(d.getFullYear(), d.getMonth(), d.getDate());
+        const earned = earnedTotalForDay(key);
+        const bucket = earned<=0 ? 0 : earned<250 ? 1 : earned<500 ? 2 : earned<1000 ? 3 : 4;
+        cellDiv.className = 'heat-cell heat-' + bucket;
+        cellDiv.title = `${key}: ${fmt(earned)}`;
+      }
+      container.appendChild(cellDiv);
+    }
+
+    // Month labels above the grid, one per week-column, aligned to the same
+    // column tracks — a label is placed the first time a column's midweek day
+    // (Thursday) falls in a new month, matching the GitHub-style contribution graph.
+    const monthsRow = document.getElementById('heatmap-months');
+    if(monthsRow){
+      monthsRow.innerHTML = '';
+      monthsRow.style.gridTemplateColumns = `repeat(${weeks}, 11px)`;
+      const shortMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      let prevMonth = -1;
+      for(let col=0; col<weeks; col++){
+        const rep = new Date(firstSunday);
+        rep.setDate(firstSunday.getDate() + col*7 + 4);
+        const label = document.createElement('div');
+        label.className = 'heatmap-month-label';
+        if(rep.getFullYear() === year && rep.getMonth() !== prevMonth){
+          label.textContent = shortMonths[rep.getMonth()];
+          prevMonth = rep.getMonth();
+        }
+        monthsRow.appendChild(label);
+      }
+    }
+  }
+  document.getElementById('heatmap-prev-year').addEventListener('click', ()=>{
+    heatmapYear--; renderHeatmap(heatmapYear);
+  });
+  document.getElementById('heatmap-next-year').addEventListener('click', ()=>{
+    heatmapYear++; renderHeatmap(heatmapYear);
+  });
+
+  // ---------- EARNINGS REPLAY ----------
+  let replayTimer = null;
+  document.getElementById('dash-replay-btn').addEventListener('click', openReplay);
+  document.getElementById('replay-close').addEventListener('click', closeReplay);
+  document.getElementById('replay-done').addEventListener('click', closeReplay);
+  document.getElementById('replay-skip').addEventListener('click', ()=>{
+    if(replaySkipFn) replaySkipFn();
+  });
+  let replaySkipFn = null;
+
+  function openReplay(){
+    const y = viewDate.getFullYear(), m = viewDate.getMonth();
+    const daysInMonth = new Date(y,m+1,0).getDate();
+    const dayAmounts = [];
+    let best = {day:0, amt:0};
+    for(let d=1; d<=daysInMonth; d++){
+      const earned = earnedTotalForDay(dateKey(y,m,d));
+      dayAmounts.push(earned);
+      if(earned > best.amt) best = {day:d, amt:earned};
+    }
+    const monthlyGoal = data.settings.dailyGoal * data.settings.workingDays;
+
+    document.getElementById('replay-overlay').classList.add('active');
+    document.getElementById('replay-month-label').textContent = `${monthNames[m]} ${y}`;
+    document.getElementById('replay-playing').style.display = 'block';
+    document.getElementById('replay-summary').style.display = 'none';
+
+    let idx = 0, cumulative = 0;
+    const dayEl = document.getElementById('replay-day');
+    const amtEl = document.getElementById('replay-cumulative');
+    const dayAmtEl = document.getElementById('replay-day-amt');
+    const barEl = document.getElementById('replay-progress-fill');
+
+    clearInterval(replayTimer);
+    function finish(){
+      clearInterval(replayTimer);
+      document.getElementById('replay-playing').style.display = 'none';
+      document.getElementById('replay-summary').style.display = 'block';
+      document.getElementById('replay-summary-total').textContent = fmt(cumulative);
+      document.getElementById('replay-summary-goal').textContent = monthlyGoal ? Math.round(cumulative/monthlyGoal*100)+'%' : '—';
+      document.getElementById('replay-summary-best').textContent = best.amt>0
+        ? `${monthNames[m]} ${best.day} — ${fmt2(best.amt)}`
+        : '—';
+    }
+    function step(){
+      if(idx >= dayAmounts.length){ finish(); return; }
+      idx++;
+      cumulative += dayAmounts[idx-1];
+      dayEl.textContent = `Day ${idx} of ${dayAmounts.length}`;
+      amtEl.textContent = fmt(cumulative);
+      dayAmtEl.textContent = dayAmounts[idx-1] > 0 ? `+${fmt2(dayAmounts[idx-1])}` : '—';
+      barEl.style.width = Math.min(100, monthlyGoal ? (cumulative/monthlyGoal*100) : 0) + '%';
+    }
+    replaySkipFn = function(){
+      while(idx < dayAmounts.length){ idx++; cumulative += dayAmounts[idx-1]; }
+      finish();
+    };
+    replayTimer = setInterval(step, 90);
+    step();
+  }
+  function closeReplay(){
+    clearInterval(replayTimer);
+    document.getElementById('replay-overlay').classList.remove('active');
+  }
+
+  // ---------- BACKUP / DURABILITY ----------
+  // Everything lives in this browser's localStorage only. That's fast and works offline,
+  // but it disappears if the user clears browser data, switches browsers, or moves devices.
+  // Where supported (Chrome/Edge), we let the user connect a real file on their computer
+  // that gets rewritten automatically every time data changes, via the File System Access API.
+  const FS_SUPPORTED = 'showSaveFilePicker' in window;
+  let backupHandle = null;
+  let backupPermission = 'none'; // 'granted' | 'prompt' | 'denied' | 'none'
+
+  function idbOpen(){
+    return new Promise((resolve, reject)=>{
+      const req = indexedDB.open('daybook-fs', 1);
+      req.onupgradeneeded = ()=> req.result.createObjectStore('handles');
+      req.onsuccess = ()=> resolve(req.result);
+      req.onerror = ()=> reject(req.error);
+    });
+  }
+  async function idbGet(key){
+    try{
+      const db = await idbOpen();
+      return await new Promise((resolve, reject)=>{
+        const tx = db.transaction('handles','readonly');
+        const req = tx.objectStore('handles').get(key);
+        req.onsuccess = ()=> resolve(req.result || null);
+        req.onerror = ()=> reject(req.error);
+      });
+    }catch(e){ return null; }
+  }
+  async function idbSet(key, val){
+    try{
+      const db = await idbOpen();
+      return await new Promise((resolve, reject)=>{
+        const tx = db.transaction('handles','readwrite');
+        tx.objectStore('handles').put(val, key);
+        tx.oncomplete = ()=> resolve(true);
+        tx.onerror = ()=> reject(tx.error);
+      });
+    }catch(e){ return false; }
+  }
+
+  function recordBackupTime(){
+    localStorage.setItem(LAST_BACKUP_KEY, String(Date.now()));
+  }
+  function lastBackupAt(){
+    const raw = localStorage.getItem(LAST_BACKUP_KEY);
+    return raw ? Number(raw) : null;
+  }
+  function relativeTime(ts){
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff/60000);
+    if(mins < 1) return 'just now';
+    if(mins < 60) return `${mins} min${mins===1?'':'s'} ago`;
+    const hrs = Math.floor(mins/60);
+    if(hrs < 24) return `${hrs} hour${hrs===1?'':'s'} ago`;
+    const days = Math.floor(hrs/24);
+    return `${days} day${days===1?'':'s'} ago`;
+  }
+
+  async function writeToBackupFile(){
+    if(!backupHandle || backupPermission !== 'granted') return;
+    try{
+      const writable = await backupHandle.createWritable();
+      await writable.write(JSON.stringify(data, null, 2));
+      await writable.close();
+      recordBackupTime();
+      updateBackupStatusUI();
+    }catch(err){
+      // Permission may have been revoked by the browser; reflect that in the UI.
+      backupPermission = 'prompt';
+      updateBackupStatusUI();
+    }
+  }
+
+  function updateBackupStatusUI(){
+    const box = document.getElementById('backup-status');
+    const title = document.getElementById('backup-status-title');
+    const sub = document.getElementById('backup-status-sub');
+    const btn = document.getElementById('connect-backup-btn');
+    if(!box) return;
+
+    if(!FS_SUPPORTED){
+      box.classList.remove('connected');
+      title.textContent = "Auto-backup isn't available in this browser";
+      sub.textContent = 'Chrome and Edge support one-click backup files. Use Export / Import below instead.';
+      btn.style.display = 'none';
+      return;
+    }
+    btn.style.display = 'inline-block';
+
+    if(!backupHandle){
+      box.classList.remove('connected');
+      title.textContent = 'Not connected';
+      sub.textContent = "Pick a file on your computer and it'll auto-save there every time you add or edit an entry.";
+      btn.textContent = 'Connect a backup file';
+    } else if(backupPermission === 'granted'){
+      box.classList.add('connected');
+      const ts = lastBackupAt();
+      title.textContent = `Connected — auto-saving to ${backupHandle.name}`;
+      sub.textContent = ts ? `Last saved ${relativeTime(ts)}` : 'Saved on your next change';
+      btn.textContent = 'Change file';
+    } else {
+      box.classList.remove('connected');
+      title.textContent = 'Reconnect needed';
+      sub.textContent = `Click to resume auto-saving to ${backupHandle.name}.`;
+      btn.textContent = 'Reconnect';
+    }
+  }
+
+  async function initBackup(){
+    if(!FS_SUPPORTED){ updateBackupStatusUI(); return; }
+    const stored = await idbGet('backupFile');
+    if(stored){
+      backupHandle = stored;
+      try{
+        const perm = await backupHandle.queryPermission({mode:'readwrite'});
+        backupPermission = perm;
+      }catch(e){ backupPermission = 'prompt'; }
+    }
+    updateBackupStatusUI();
+  }
+
+  document.getElementById('connect-backup-btn').addEventListener('click', async ()=>{
+    if(!FS_SUPPORTED) return;
+    try{
+      if(backupHandle && backupPermission !== 'granted'){
+        const perm = await backupHandle.requestPermission({mode:'readwrite'});
+        backupPermission = perm;
+        if(perm === 'granted') await writeToBackupFile();
+        updateBackupStatusUI();
+        return;
+      }
+      const handle = await window.showSaveFilePicker({
+        suggestedName: 'daybook-backup.json',
+        types: [{ description: 'JSON backup', accept: {'application/json': ['.json']} }]
+      });
+      backupHandle = handle;
+      backupPermission = 'granted';
+      await idbSet('backupFile', handle);
+      await writeToBackupFile();
+      updateBackupStatusUI();
+      showToast('Backup file connected');
+    }catch(err){
+      // User cancelled the picker — nothing to do.
+    }
+  });
+
+  function renderBackupBanner(){
+    const el = document.getElementById('backup-banner');
+    const entryCount = Object.values(data.entries).reduce((s,arr)=> s + arr.length, 0);
+    const ts = lastBackupAt();
+    const staleMs = 7 * 24 * 60 * 60 * 1000;
+    const isStale = !ts || (Date.now() - ts) > staleMs;
+    const autoConnected = backupHandle && backupPermission === 'granted';
+
+    if(entryCount === 0 || !isStale || autoConnected || bannerDismissed){
+      el.innerHTML = '';
+      return;
+    }
+    el.innerHTML = `
+      <div class="banner">
+        <div><strong>Back up your data.</strong> Your income log only lives in this browser — ${ts ? `last backed up ${relativeTime(ts)}` : "you haven't backed it up yet"}.</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-primary" id="banner-backup-btn">Back up now</button>
+          <button class="dismiss" id="banner-dismiss-btn" title="Dismiss">✕</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('banner-backup-btn').addEventListener('click', ()=>{
+      document.querySelector('nav.tabs button[data-tab="settings"]').click();
+    });
+    document.getElementById('banner-dismiss-btn').addEventListener('click', ()=>{
+      bannerDismissed = true;
+      el.innerHTML = '';
+    });
+  }
+  let bannerDismissed = false;
+
+  // ---------- INIT ----------
+  renderCalendar();
+  renderDashboard();
+  updatePendingBadge();
+  renderClientDatalist();
+  initBackup().then(renderBackupBanner);
+})();
+</script>
+</body>
+</html>
